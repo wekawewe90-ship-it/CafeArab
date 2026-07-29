@@ -32,7 +32,7 @@
 
 <h2 style="text-align:center;">إنشاء حساب جديد</h2>
 
-<form>
+<form id="registerForm">
 
 <input
 type="text"
@@ -44,17 +44,19 @@ required>
 
 <input
 type="email"
+id="email"
 class="input"
 placeholder="البريد الإلكتروني"
-required>
+required> 
 
 <br><br>
 
 <input
 type="password"
+id="password"
 class="input"
 placeholder="كلمة المرور"
-required>
+required> 
 
 <br><br>
 
@@ -121,7 +123,7 @@ class="input">
 </footer>
 
 <script src="app.js"></script>
-
+<script type="module" src="register.js"></script>
 </body>
 
 </html>
