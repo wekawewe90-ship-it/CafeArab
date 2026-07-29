@@ -1,9 +1,7 @@
-alert("chat.js loaded");
+alert("✅ chat.js يعمل");
 
-const button = document.getElementById("sendBtn");
+const sendBtn = document.getElementById("sendBtn");
 
-alert(button ? "تم العثور على الزر" : "الزر غير موجود");
-
-button.addEventListener("click", () => {
-    alert("زر الإرسال يعمل");
+sendBtn.addEventListener("click", () => {
+    alert("🎉 زر الإرسال يعمل");
 });
