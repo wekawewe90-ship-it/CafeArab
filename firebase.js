@@ -1,4 +1,9 @@
 // Firebase SDK
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+// إعدادات مشروعك
 const firebaseConfig = {
   apiKey: "AIzaSyCc2LiujPKNiSaMHi6btRkfP-sB4DnRM5Q",
   authDomain: "cafearab-c6f0b.firebaseapp.com",
@@ -9,7 +14,12 @@ const firebaseConfig = {
   measurementId: "G-Y6MEL4XGVC"
 };
 
-firebase.initializeApp(firebaseConfig);
+// تشغيل Firebase
+const app = initializeApp(firebaseConfig);
 
-const db = firebase.firestore();
-const auth = firebase.auth();
+// الخدمات
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// تصدير الخدمات
+export { auth, db };
