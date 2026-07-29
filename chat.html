@@ -2,14 +2,12 @@
 <html lang="ar" dir="rtl">
 
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Cafe Arab | غرفة الدردشة</title>
+<title>Cafe Arab | الدردشة</title>
 
 <link rel="stylesheet" href="style.css">
-
 </head>
 
 <body>
@@ -21,7 +19,7 @@
 </div>
 
 <div class="subtitle">
-غرفة الدردشة العامة
+مرحباً بك في المقهى العربي
 </div>
 
 </header>
@@ -30,46 +28,71 @@
 
 <div class="card">
 
-<div style="display:flex;justify-content:space-between;align-items:center;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
 
-<b>💬 كافيه مصر</b>
+<h2 id="userName">👤 المستخدم</h2>
 
-<span class="online">🟢 452 متصل</span>
-
-</div>
-
-</div>
-
-<div class="card" id="messages" style="height:350px;overflow-y:auto;">
-
-<div style="margin-bottom:15px;">
-<b style="color:#d4af37;">محمد</b><br>
-السلام عليكم 👋
-</div>
-
-<div style="margin-bottom:15px;">
-<b style="color:#d4af37;">سارة</b><br>
-وعليكم السلام 😊
-</div>
-
-<div style="margin-bottom:15px;">
-<b style="color:#d4af37;">أحمد</b><br>
-أهلاً بكل الموجودين ☕
-</div>
+<button id="logoutBtn" class="btn" style="width:auto;padding:10px 18px;">
+🚪 خروج
+</button>
 
 </div>
 
-<div class="card">
+<hr>
 
-<textarea
-class="input"
+<div id="messages"
+
+style="
+height:420px;
+overflow-y:auto;
+background:#111;
+padding:15px;
+border-radius:12px;
+margin-bottom:20px;
+">
+
+</div>
+
+<div style="display:flex;gap:10px;">
+
+<input
+
 id="messageInput"
-rows="3"
-placeholder="اكتب رسالتك هنا..."></textarea>
 
-<br><br>
+class="input"
 
-<button class="btn" onclick="sendMessage()">
+placeholder="اكتب رسالتك..."
+
+style="margin:0;">
+
+<button
+
+id="sendBtn"
+
+class="btn"
+
+style="width:140px;margin:0;">
+
+📤 إرسال
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<footer>
+
+© 2026 Cafe Arab
+
+</footer>
+
+<script type="module" src="chat.js"></script>
+
+</body>
+</html>
 
 📨 إرسال
 
