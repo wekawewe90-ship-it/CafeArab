@@ -14,14 +14,16 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
+// عناصر الصفحة
 const messages = document.getElementById("messages");
-const input = document.getElementById("messageInput");
+const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const userName = document.getElementById("userName");
 
 let currentUser = null;
 
+// التحقق من تسجيل الدخول
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
@@ -32,5 +34,94 @@ onAuthStateChanged(auth, (user) => {
     currentUser = user;
     userName.textContent = "👤 " + user.email;
 
-    console.log("تم تسجيل الدخول:", user.email);
+    loadMessages();
+});
+
+// إرسال رسالة
+sendBtn.addEventListener("click", sendMessage);
+
+messageInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+        sendMessage();
+    }
+});
+
+async function sendMessage() {
+
+    const text = messageInput.value.trim();
+
+    if (text === "") return;
+
+    try {
+
+        await addDoc(collection(db, "messages"), {
+            user: currentUser.email,
+            text: text,
+            createdAt: serverTimestamp()
+        });
+
+        messageInput.value = "";
+
+    } catch (error) {
+
+        console.error(error);
+        alert("حدث خطأ أثناء إرسال الرسالة");
+
+    }
+
+}
+
+// تحميل الرسائل
+function loadMessages() {
+
+    const q = query(
+        collection(db, "messages"),
+        orderBy("createdAt")
+    );
+
+    onSnapshot(q, (snapshot) => {
+
+        messages.innerHTML = "";
+
+        snapshot.forEach((doc) => {
+
+            const data = doc.data();
+
+            messages.innerHTML += `
+
+            <div style="
+                background:#222;
+                padding:12px;
+                margin-bottom:10px;
+                border-radius:12px;
+                color:white;
+            ">
+
+                <b style="color:#d4af37;">
+                    ${data.user}
+                </b>
+
+                <br><br>
+
+                ${data.text}
+
+            </div>
+
+            `;
+
+        });
+
+        messages.scrollTop = messages.scrollHeight;
+
+    });
+
+}
+
+// تسجيل الخروج
+logoutBtn.addEventListener("click", async () => {
+
+    await signOut(auth);
+
+    window.location.href = "login.html";
+
 });
