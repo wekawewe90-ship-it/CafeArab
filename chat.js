@@ -1,116 +1,62 @@
-import { auth, db } from "./firebase.js";
+import { db } from "./firebase.js";
 
 import {
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  serverTimestamp
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot,
+serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-import {
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-
-const messages = document.getElementById("messages");
 const input = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const userName = document.getElementById("userName");
+const button = document.getElementById("sendBtn");
+const box = document.getElementById("messages");
 
-let currentUser = null;
+button.onclick = async () => {
 
-onAuthStateChanged(auth, (user) => {
+const text = input.value.trim();
 
-    if (!user) {
-        window.location.href = "login.html";
-        return;
-    }
+if(text==="") return;
 
-    currentUser = user;
-    userName.textContent = "👤 " + user.email;
+await addDoc(collection(db,"messages"),{
 
-    loadMessages();
-});
+user:"مستخدم",
 
-async function sendMessage() {
+text:text,
 
-    const text = input.value.trim();
-
-    if (text === "") return;
-
-    await addDoc(collection(db, "messages"), {
-
-        user: currentUser.email,
-
-        text: text,
-
-        createdAt: serverTimestamp()
-
-    });
-
-    input.value = "";
-
-}
-
-sendBtn.addEventListener("click", sendMessage);
-
-input.addEventListener("keypress", (e) => {
-
-    if (e.key === "Enter") {
-
-        sendMessage();
-
-    }
+createdAt:serverTimestamp()
 
 });
 
-function loadMessages() {
+input.value="";
 
-    const q = query(
-        collection(db, "messages"),
-        orderBy("createdAt")
-    );
+};
 
-    onSnapshot(q, (snapshot) => {
+const q=query(collection(db,"messages"),orderBy("createdAt"));
 
-        messages.innerHTML = "";
+onSnapshot(q,(snapshot)=>{
 
-        snapshot.forEach((doc) => {
+box.innerHTML="";
 
-            const data = doc.data();
+snapshot.forEach((doc)=>{
 
-            messages.innerHTML += `
-            <div style="
-            background:#222;
-            padding:12px;
-            margin-bottom:10px;
-            border-radius:12px;
-            ">
-                <b style="color:#d4af37">
-                ${data.user}
-                </b>
+const data=doc.data();
 
-                <br><br>
+box.innerHTML+=`
 
-                ${data.text}
-            </div>
-            `;
+<div class="msg">
 
-        });
+<b>${data.user}</b><br>
 
-        messages.scrollTop = messages.scrollHeight;
+${data.text}
 
-    });
+</div>
 
-}
+`;
 
-logoutBtn.addEventListener("click", async () => {
+});
 
-    await signOut(auth);
-
-    window.location.href = "login.html";
+box.scrollTop=box.scrollHeight;
 
 });
