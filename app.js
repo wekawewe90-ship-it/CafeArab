@@ -38,7 +38,41 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("🔑 صفحة تسجيل الدخول قريبًا.");
             }
 
-        });
+        });function sendMessage(){
+
+let input=document.getElementById("messageInput");
+
+if(input.value.trim()==""){
+
+alert("اكتب رسالة أولاً");
+
+return;
+
+}
+
+let box=document.getElementById("messages");
+
+box.innerHTML+=`
+
+<div style="margin-top:15px;">
+
+<b style="color:#d4af37;">
+
+أنت
+
+</b><br>
+
+${input.value}
+
+</div>
+
+`;
+
+input.value="";
+
+box.scrollTop=box.scrollHeight;
+
+        }
 
     });
 
