@@ -8,9 +8,14 @@ orderBy,
 onSnapshot,
 serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-
 const input = document.getElementById("messageInput");
 const button = document.getElementById("sendBtn");
+const box = document.getElementById("messages");
+
+console.log(input);
+console.log(button);
+console.log(box);
+
 const box = document.getElementById("messages");
 
 button.onclick = async () => {
