@@ -8,7 +8,12 @@ form.addEventListener("submit", async (e) => {
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
+const confirmPassword = document.getElementById("confirmPassword").value.trim();
 
+if (password !== confirmPassword) {
+    alert("كلمتا المرور غير متطابقتين");
+    return;
+}
     try {
         await createUserWithEmailAndPassword(auth, email, password);
 
@@ -17,6 +22,14 @@ form.addEventListener("submit", async (e) => {
         window.location.href = "login.html";
 
     } catch (error) {
-        alert(error.message);
+        if (error.code === "auth/email-already-in-use") {
+    alert("البريد الإلكتروني مستخدم بالفعل");
+} else if (error.code === "auth/weak-password") {
+    alert("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+} else if (error.code === "auth/invalid-email") {
+    alert("البريد الإلكتروني غير صحيح");
+} else {
+    alert(error.message);
+        } 
     }
 });
