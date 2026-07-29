@@ -1,4 +1,5 @@
 import { auth } from "./firebase.js";
+
 import {
   signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
@@ -6,44 +7,24 @@ import {
 const form = document.getElementById("loginForm");
 
 form.addEventListener("submit", async (e) => {
-  e.preventDefault();
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+    e.preventDefault();
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    alert("✅ تم تسجيل الدخول بنجاح");
+    try {
 
-    window.location.href = "chat.html";
+        await signInWithEmailAndPassword(auth, email, password);
 
-  } catch (error) {
-    let message = "حدث خطأ أثناء تسجيل الدخول";
+        window.location.href = "chat.html";
 
-    switch (error.code) {
-      case "auth/invalid-credential":
-        message = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
-        break;
+    } catch (error) {
 
-      case "auth/user-not-found":
-        message = "الحساب غير موجود";
-        break;
+        alert("البريد الإلكتروني أو كلمة المرور غير صحيحة");
 
-      case "auth/wrong-password":
-        message = "كلمة المرور غير صحيحة";
-        break;
+        console.error(error);
 
-      case "auth/invalid-email":
-        message = "البريد الإلكتروني غير صحيح";
-        break;
-
-      case "auth/too-many-requests":
-        message = "تم إيقاف المحاولات مؤقتًا، حاول لاحقًا";
-        break;
     }
 
-    alert(message);
-    console.error(error);
-  }
 });
