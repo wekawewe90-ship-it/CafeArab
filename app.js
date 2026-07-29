@@ -7,26 +7,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("Cafe Arab Started");
 
-    // تأثير بسيط عند الضغط على الأزرار فقط
     const buttons = document.querySelectorAll(".btn");
 
     buttons.forEach(button => {
-
         button.addEventListener("click", function () {
-
             this.style.transform = "scale(0.97)";
 
             setTimeout(() => {
                 this.style.transform = "scale(1)";
             }, 150);
-
         });
-
     });
 
 });
 
-// إرسال رسالة داخل صفحة الشات
 function sendMessage() {
 
     const input = document.getElementById("messageInput");
