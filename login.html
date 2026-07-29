@@ -8,7 +8,7 @@
 
     <link rel="stylesheet" href="style.css">
 </head>
-
+<script type="module" src="login.js"></script>
 <body>
 
 <header>
@@ -29,27 +29,32 @@
 
         <h2 style="text-align:center;">تسجيل الدخول</h2>
 
-        <form>
+        <form id="loginForm">
 
-            <input
-            type="text"
-            placeholder="اسم المستخدم أو البريد الإلكتروني"
-            class="input">
+<input
+type="email"
+id="email"
+placeholder="البريد الإلكتروني"
+class="input"
+required>
 
-            <br><br>
+<br><br>
 
-            <input
-            type="password"
-            placeholder="كلمة المرور"
-            class="input">
+<input
+type="password"
+id="password"
+placeholder="كلمة المرور"
+class="input"
+required>
 
-            <br><br>
+<br><br>
 
-            <button class="btn">
-                🔑 تسجيل الدخول
-            </button>
+<button type="submit" class="btn">
+🔑 تسجيل الدخول
+</button>
 
-        </form>
+        </form> 
+
 
         <br>
 
