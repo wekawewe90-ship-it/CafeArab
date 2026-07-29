@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول | Cafe Arab</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">
+        ☕ Cafe Arab
+    </div>
+
+    <div class="subtitle">
+        مرحباً بعودتك
+    </div>
+
+</header>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2 style="text-align:center;">تسجيل الدخول</h2>
+
+        <form>
+
+            <input
+            type="text"
+            placeholder="اسم المستخدم أو البريد الإلكتروني"
+            class="input">
+
+            <br><br>
+
+            <input
+            type="password"
+            placeholder="كلمة المرور"
+            class="input">
+
+            <br><br>
+
+            <button class="btn">
+                🔑 تسجيل الدخول
+            </button>
+
+        </form>
+
+        <br>
+
+        <a href="guest.html" class="btn">
+            👤 دخول كضيف
+        </a>
+
+        <a href="register.html" class="btn">
+            📝 إنشاء حساب جديد
+        </a>
+
+        <div style="text-align:center;margin-top:15px;">
+
+            <a href="#"
+            style="color:#d4af37;text-decoration:none;">
+
+            نسيت كلمة المرور؟
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<footer>
+
+    © 2026 Cafe Arab
+
+</footer>
+
+<script src="app.js"></script>
+
+</body>
+
+</html>
