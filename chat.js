@@ -14,7 +14,6 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
-// عناصر الصفحة
 const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -23,7 +22,6 @@ const userName = document.getElementById("userName");
 
 let currentUser = null;
 
-// التحقق من تسجيل الدخول
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
@@ -35,21 +33,24 @@ onAuthStateChanged(auth, (user) => {
     userName.textContent = "👤 " + user.email;
 
     loadMessages();
-});
-async function sendMessage() {
 
-    console.log("تم الضغط على زر الإرسال");
+});
+
+sendBtn.addEventListener("click", sendMessage);
+
+messageInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+        sendMessage();
+    }
+});
+
+async function sendMessage() {
 
     const text = messageInput.value.trim();
 
-    if (text === "") {
-        alert("اكتب رسالة أولاً");
-        return;
-    }
+    if (text === "") return;
 
     try {
-
-        console.log(currentUser);
 
         await addDoc(collection(db, "messages"), {
             user: currentUser.email,
@@ -57,30 +58,17 @@ async function sendMessage() {
             createdAt: serverTimestamp()
         });
 
-        alert("تم إرسال الرسالة");
-
         messageInput.value = "";
 
     } catch (error) {
 
         console.error(error);
-
         alert(error.message);
 
     }
 
 }
 
-    } catch (error) {
-
-        console.error(error);
-        alert("حدث خطأ أثناء إرسال الرسالة");
-
-    }
-
-}
-
-// تحميل الرسائل
 function loadMessages() {
 
     const q = query(
@@ -97,25 +85,15 @@ function loadMessages() {
             const data = doc.data();
 
             messages.innerHTML += `
+            <div style="background:#222;padding:12px;margin-bottom:10px;border-radius:12px;color:white;">
 
-            <div style="
-                background:#222;
-                padding:12px;
-                margin-bottom:10px;
-                border-radius:12px;
-                color:white;
-            ">
-
-                <b style="color:#d4af37;">
-                    ${data.user}
-                </b>
+                <b style="color:#d4af37;">${data.user}</b>
 
                 <br><br>
 
                 ${data.text}
 
             </div>
-
             `;
 
         });
@@ -125,7 +103,7 @@ function loadMessages() {
     });
 
 }
-// تسجيل الخروج
+
 logoutBtn.addEventListener("click", async () => {
 
     await signOut(auth);
