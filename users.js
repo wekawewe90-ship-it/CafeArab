@@ -69,10 +69,9 @@ function renderUsers(users) {
 
             <p>@${user.username}</p>
 
-            <a href="private-chat.html?uid=${user.id}" class="btn">
+            <a href="private-chat.html?uid=${user.id}" class="btn" target="_self">
 💬 بدء محادثة
 </a> 
-
         </div>
 
         `;
