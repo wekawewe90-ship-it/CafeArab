@@ -43,12 +43,20 @@ messageInput.addEventListener("keypress", (e) => {
         sendMessage();
     }
 });
-
 async function sendMessage() {
+
+    alert("1 - دخلنا الدالة");
 
     const text = messageInput.value.trim();
 
-    if (text === "") return;
+    if (text === "") {
+        alert("2 - الرسالة فاضية");
+        return;
+    }
+
+    alert("3 - الرسالة: " + text);
+
+    alert("4 - currentUser: " + (currentUser ? currentUser.email : "null"));
 
     try {
 
@@ -58,23 +66,17 @@ async function sendMessage() {
             createdAt: serverTimestamp()
         });
 
+        alert("5 - تم الإرسال");
+
         messageInput.value = "";
 
     } catch (error) {
 
-        console.error(error);
-        alert(error.message);
+        alert("خطأ: " + error.message);
 
     }
 
 }
-
-function loadMessages() {
-
-    const q = query(
-        collection(db, "messages"),
-        orderBy("createdAt")
-    );
 
     onSnapshot(q, (snapshot) => {
 
