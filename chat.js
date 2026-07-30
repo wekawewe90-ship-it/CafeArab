@@ -36,23 +36,20 @@ onAuthStateChanged(auth, (user) => {
 
     loadMessages();
 });
-
-// إرسال رسالة
-sendBtn.addEventListener("click", sendMessage);
-
-messageInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-        sendMessage();
-    }
-});
-
 async function sendMessage() {
+
+    console.log("تم الضغط على زر الإرسال");
 
     const text = messageInput.value.trim();
 
-    if (text === "") return;
+    if (text === "") {
+        alert("اكتب رسالة أولاً");
+        return;
+    }
 
     try {
+
+        console.log(currentUser);
 
         await addDoc(collection(db, "messages"), {
             user: currentUser.email,
@@ -60,7 +57,19 @@ async function sendMessage() {
             createdAt: serverTimestamp()
         });
 
+        alert("تم إرسال الرسالة");
+
         messageInput.value = "";
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(error.message);
+
+    }
+
+}
 
     } catch (error) {
 
