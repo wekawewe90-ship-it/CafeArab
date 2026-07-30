@@ -17,6 +17,7 @@ import {
 const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
+alert(sendBtn);
 const logoutBtn = document.getElementById("logoutBtn");
 const userName = document.getElementById("userName");
 
