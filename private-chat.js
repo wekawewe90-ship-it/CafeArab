@@ -14,6 +14,14 @@ const chatTitle = document.getElementById("chatTitle");
 // قراءة uid من الرابط
 const params = new URLSearchParams(window.location.search);
 const otherUid = params.get("uid");
+let currentUid = "";
+let chatId = "";
+
+function createChatId(uid1, uid2) {
+
+    return [uid1, uid2].sort().join("_");
+
+}
 
 onAuthStateChanged(auth, async (user) => {
 
