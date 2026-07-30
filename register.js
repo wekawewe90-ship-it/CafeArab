@@ -24,7 +24,22 @@ const username = document.getElementById("username").value.trim();
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
 const user = userCredential.user;
+      
+await setDoc(doc(db, "users", user.uid), {
 
+    name: name,
+
+    username: username,
+
+    email: email,
+
+    photo: "",
+
+    bio: "",
+
+    createdAt: serverTimestamp()
+
+});
         alert("🎉 تم إنشاء الحساب بنجاح");
 
         window.location.href = "login.html";
