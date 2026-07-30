@@ -116,9 +116,6 @@ function loadMessages() {
     });
 
 }
-<a href="users.html" class="btn" style="width:auto;padding:10px 18px;">
-👥 المستخدمون
-</a>
 // تسجيل الخروج
 logoutBtn.addEventListener("click", async () => {
 
