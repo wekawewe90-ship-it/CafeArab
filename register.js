@@ -18,6 +18,12 @@ form.addEventListener("submit", async (e) => {
   const name = document.getElementById("name").value.trim();
 const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
+  const confirmPassword = document.getElementById("confirmPassword").value.trim();
+
+if (password !== confirmPassword) {
+    alert("❌ كلمتا المرور غير متطابقتين");
+    return;
+}
 
     try {
 
