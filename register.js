@@ -21,7 +21,9 @@ const username = document.getElementById("username").value.trim();
 
     try {
 
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+const user = userCredential.user;
 
         alert("🎉 تم إنشاء الحساب بنجاح");
 
