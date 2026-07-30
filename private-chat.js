@@ -24,7 +24,12 @@ function createChatId(uid1, uid2) {
 }
 
 onAuthStateChanged(auth, async (user) => {
+currentUid = user.uid;
 
+chatId = createChatId(currentUid, otherUid);
+
+console.log("Chat ID:", chatId);
+    
     if (!user) {
         window.location.href = "login.html";
         return;
