@@ -1,3 +1,16 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>اختبار</title>
+</head>
+
+<body>
+
+<h2>اختبار الإشعارات</h2>
+
+<div id="list">جارى التحميل...</div>
+
 <script type="module">
 
 import { auth } from "./firebase.js";
@@ -6,22 +19,25 @@ import {
 onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
-const list=document.getElementById("list");
+const list = document.getElementById("list");
 
-list.innerHTML="بدأ التنفيذ";
+list.innerHTML = "بدأ التنفيذ...";
 
-onAuthStateChanged(auth,(user)=>{
+onAuthStateChanged(auth, (user) => {
 
-if(user){
+    if (user) {
 
-list.innerHTML="✅ تم تسجيل الدخول";
+        list.innerHTML = "✅ تم تسجيل الدخول";
 
-}else{
+    } else {
 
-list.innerHTML="❌ غير مسجل دخول";
+        list.innerHTML = "❌ غير مسجل دخول";
 
-}
+    }
 
 });
 
 </script>
+
+</body>
+</html>
