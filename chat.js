@@ -84,15 +84,7 @@ onAuthStateChanged(auth, async (user) => {
 // زر الجرس (مؤقت)
 // =========================
 
-if (notificationBtn) {
 
-    notificationBtn.addEventListener("click", () => {
-
-        alert("🔔 الإشعارات قريباً");
-
-    });
-
-}
 
 // =========================
 // إرسال رسالة
