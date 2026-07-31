@@ -1,22 +1,25 @@
 import { auth, db } from "./firebase.js";
 
 import {
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  serverTimestamp,
-  doc,
-  getDoc
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    onSnapshot,
+    serverTimestamp,
+    doc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
-  onAuthStateChanged,
-  signOut
+    onAuthStateChanged,
+    signOut
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
+// =========================
 // عناصر الصفحة
+// =========================
+
 const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -24,10 +27,15 @@ const logoutBtn = document.getElementById("logoutBtn");
 const notificationBtn = document.getElementById("notificationBtn");
 const userName = document.getElementById("userName");
 
+// =========================
+
 let currentUser = null;
 let currentUserData = null;
 
-// التحقق من تسجيل الدخول
+// =========================
+// تسجيل الدخول
+// =========================
+
 onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
@@ -41,7 +49,9 @@ onAuthStateChanged(auth, async (user) => {
 
     try {
 
-        const userSnap = await getDoc(doc(db, "users", user.uid));
+        const userRef = doc(db, "users", user.uid);
+
+        const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
 
@@ -57,9 +67,9 @@ onAuthStateChanged(auth, async (user) => {
 
         }
 
-    } catch (e) {
+    } catch (error) {
 
-        console.error(e);
+        console.error(error);
 
         userName.textContent =
             "👤 " + user.email;
@@ -70,12 +80,15 @@ onAuthStateChanged(auth, async (user) => {
 
 });
 
-// زر الإشعارات (مؤقت)
+// =========================
+// زر الجرس (مؤقت)
+// =========================
+
 if (notificationBtn) {
 
     notificationBtn.addEventListener("click", () => {
 
-        alert("📬 الإشعارات قريباً");
+        alert("🔔 الإشعارات قريباً");
 
     });
 
@@ -163,9 +176,57 @@ function loadMessages() {
 
                 sender = `
                 <a
-                href="private
+                    href="private-chat.html?uid=${data.uid}"
+                    style="
+                        color:#d4af37;
+                        text-decoration:none;
+                        font-weight:bold;
+                        cursor:pointer;
+                    ">
+                    ${data.name || data.user}
+                </a>
+                `;
 
-              // =========================
+            } else {
+
+                sender = `
+                <b style="color:#d4af37;">
+                    ${data.user}
+                </b>
+                `;
+
+            }
+
+            messages.innerHTML += `
+
+            <div style="
+                background:#222;
+                padding:12px;
+                margin-bottom:10px;
+                border-radius:12px;
+                color:white;
+            ">
+
+                ${sender}
+
+                <br><br>
+
+                ${data.text}
+
+            </div>
+
+            `;
+
+        });
+
+        messages.scrollTop = messages.scrollHeight;
+
+    });
+
+                   }
+
+
+// =========================
 // تسجيل الخروج
 // =========================
 
@@ -187,6 +248,3 @@ logoutBtn.addEventListener("click", async () => {
 
 });
 
-// =========================
-// نهاية الملف
-// =========================
