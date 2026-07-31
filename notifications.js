@@ -38,14 +38,16 @@ function loadNotifications(){
 
     const q = query(
 
-        collection(
-            db,
-            "notifications",
-            currentUid,
-            "items"
-        )
+    collection(
+        db,
+        "notifications",
+        currentUid,
+        "items"
+    ),
 
-    );
+    where("read","==",false)
+
+);
 
     onSnapshot(q,(snapshot)=>{
 
@@ -152,6 +154,8 @@ document.addEventListener("click",(e)=>{
 
         notificationsMenu.style.display="none";
 
-    }
+    
 
-});
+            });
+
+}
