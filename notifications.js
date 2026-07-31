@@ -4,6 +4,7 @@ import {
     collection,
     query,
     where,
+    orderBy,
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
@@ -12,6 +13,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
 const notificationBtn = document.getElementById("notificationBtn");
+const notificationsMenu = document.getElementById("notificationsMenu");
+const notificationsList = document.getElementById("notificationsList");
 
 onAuthStateChanged(auth, (user) => {
 
@@ -27,7 +30,9 @@ function loadNotifications(uid) {
 
         collection(db, "notifications", uid, "items"),
 
-        where("read", "==", false)
+        where("read", "==", false),
+
+        orderBy("createdAt", "desc")
 
     );
 
@@ -35,16 +40,56 @@ function loadNotifications(uid) {
 
         const count = snapshot.size;
 
+        notificationBtn.textContent =
+            count > 0 ? `🔔 ${count}` : "🔔";
+
+        notificationsList.innerHTML = "";
+
         if (count === 0) {
 
-            notificationBtn.textContent = "🔔";
+            notificationsList.innerHTML =
+                "<p>لا توجد إشعارات</p>";
 
-        } else {
-
-            notificationBtn.textContent = `🔔 ${count}`;
+            return;
 
         }
+
+        snapshot.forEach((docItem) => {
+
+            const data = docItem.data();
+
+            notificationsList.innerHTML += `
+
+            <div class="card"
+            style="margin-bottom:10px;cursor:pointer"
+            onclick="location.href='private-chat.html?uid=${data.fromUid}'">
+
+                <b>${data.fromName}</b>
+
+                <br>
+
+                ${data.text}
+
+            </div>
+
+            `;
+
+        });
 
     });
 
 }
+
+notificationBtn.addEventListener("click", () => {
+
+    if (notificationsMenu.style.display === "block") {
+
+        notificationsMenu.style.display = "none";
+
+    } else {
+
+        notificationsMenu.style.display = "block";
+
+    }
+
+});
