@@ -3,10 +3,9 @@ import { auth, db } from "./firebase.js";
 import {
     collection,
     query,
-    where, 
+    where,
     onSnapshot,
-    updateDoc,
-    doc
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -38,32 +37,45 @@ function loadNotifications(){
 
     const q = query(
 
-    collection(
-        db,
-        "notifications",
-        currentUid,
-        "items"
-    ),
+        collection(
+            db,
+            "notifications",
+            currentUid,
+            "items"
+        ),
 
-    where("read","==",false)
+        where("read","==",false)
 
-);
+    );
 
     onSnapshot(q,(snapshot)=>{
 
-        let unread = 0;
+        notificationsList.innerHTML="";
 
-        notificationsList.innerHTML = "";
+        const count = snapshot.size;
 
-           snapshot.forEach((docItem)=>{
+        notificationBtn.innerHTML =
+        count > 0
+        ? `🔔 <span style="
+            background:red;
+            color:white;
+            border-radius:50%;
+            padding:2px 7px;
+            font-size:12px;
+        ">${count}</span>`
+        : "🔔";
+        if(count===0){
+
+            notificationsList.innerHTML =
+            "<div style='padding:12px;text-align:center'>لا توجد إشعارات</div>";
+
+            return;
+
+        }
+
+        snapshot.forEach((docItem)=>{
 
             const data = docItem.data();
-
-            if(data.read === false){
-
-                unread++;
-
-            }
 
             const item = document.createElement("div");
 
@@ -74,35 +86,28 @@ function loadNotifications(){
             item.style.cursor = "pointer";
 
             item.innerHTML = `
-
                 <b>${data.fromName}</b>
-
                 <br>
-
                 ${data.text}
-
             `;
 
             item.onclick = async()=>{
 
-                try {
+                try{
 
-    await updateDoc(docItem.ref, {
-        read: true
-    });
+                    await updateDoc(docItem.ref,{
+                        read:true
+                    });
 
-    console.log("تم تحديث الإشعار");
+                }catch(error){
 
-} catch (e) {
+                    console.error(error);
 
-    alert(e.message);
-    console.error(e);
-
-}
+                }
 
                 notificationsMenu.style.display="none";
 
-                window.location.href=
+                window.location.href =
                 `private-chat.html?uid=${data.fromUid}`;
 
             };
@@ -111,35 +116,21 @@ function loadNotifications(){
 
         });
 
-        if(unread>0){
-
-            notificationBtn.innerHTML=
-            `🔔 <span style="
-            background:red;
-            color:white;
-            border-radius:50%;
-            padding:2px 7px;
-            font-size:12px;
-            ">${unread}</span>`;
-
-        }else{
-
-            notificationBtn.innerHTML="🔔";
-
-        }
-
     });
 
-                }
-
-notificationBtn.addEventListener("click",(e)=>{
+}notificationBtn.addEventListener("click",(e)=>{
 
     e.stopPropagation();
 
-    notificationsMenu.style.display =
-    notificationsMenu.style.display==="block"
-    ? "none"
-    : "block";
+    if(notificationsMenu.style.display==="block"){
+
+        notificationsMenu.style.display="none";
+
+    }else{
+
+        notificationsMenu.style.display="block";
+
+    }
 
 });
 
@@ -155,8 +146,6 @@ document.addEventListener("click",(e)=>{
 
         notificationsMenu.style.display="none";
 
-    
+    }
 
-            });
-
-}
+});
