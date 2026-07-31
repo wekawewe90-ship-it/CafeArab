@@ -1,4 +1,5 @@
 import { auth, db } from "./firebase.js";
+console.log("notifications.js loaded");
 
 import {
     doc,
@@ -32,8 +33,22 @@ function createChatId(uid1, uid2) {
     return [uid1, uid2].sort().join("_");
 }
 
-onAuthStateChanged(auth, async (user) => {
+console.log("notifications.js loaded");
 
+onAuthStateChanged(auth, (user) => {
+
+    console.log("User =", user);
+
+    if (!user) return;
+
+    currentUid = user.uid;
+
+    console.log("UID =", currentUid);
+
+    loadNotifications(currentUid);
+
+});
+    
     if (!user) {
 
         window.location.href = "login.html";
