@@ -51,8 +51,11 @@ function loadNotifications(){
         orderBy("createdAt","desc")
 
     );
+console.log("Loading notifications for:", uid);
+  onSnapshot(q, (snapshot) => {
 
-    onSnapshot(q,(snapshot)=>{
+    console.log("Notifications:", snapshot.size);
+    
 
         const count = snapshot.size;
 
