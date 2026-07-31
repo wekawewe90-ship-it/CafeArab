@@ -8,8 +8,7 @@ import {
   onSnapshot,
   serverTimestamp,
   doc,
-  getDoc,
-  where
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -40,7 +39,6 @@ onAuthStateChanged(auth, async (user) => {
 
     currentUser = user;
 
-    // قراءة بيانات المستخدم
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -58,113 +56,127 @@ onAuthStateChanged(auth, async (user) => {
 
     loadMessages();
 
-    loadNotifications();
+});
+
+// زر الجرس (مؤقت)
+if(notificationBtn){
+
+notificationBtn.addEventListener("click",()=>{
+
+alert("📬 الإشعارات قريباً");
 
 });
 // =========================
-// تحميل الإشعارات
+// إرسال رسالة
 // =========================
 
-function loadNotifications() {
+sendBtn.addEventListener("click", sendMessage);
 
-    const q = query(
+messageInput.addEventListener("keydown", (e) => {
 
-        collection(db, "notifications", currentUser.uid, "items"),
+    if (e.key === "Enter") {
 
-        where("read", "==", false)
+        sendMessage();
 
-    );
-
-    onSnapshot(q, (snapshot) => {
-
-        const count = snapshot.size;
-
-        if (count === 0) {
-
-            notificationBtn.textContent = "🔔";
-
-        } else {
-
-            notificationBtn.textContent = `🔔 ${count}`;
-
-        }
-
-    });
-
-}
-
-// =========================
-// الضغط على زر الإشعارات
-// =========================
-
-notificationBtn.addEventListener("click", () => {
-
-    alert("قريبًا: قائمة الإشعارات 📬");
+    }
 
 });
 
-const notificationsMenu = document.getElementById("notificationsMenu");
-const notificationsList = document.getElementById("notificationsList");
+async function sendMessage() {
 
-notificationBtn.addEventListener("click", () => {
+    const text = messageInput.value.trim();
 
-    if (notificationsMenu.style.display === "block") {
+    if (text === "") return;
 
-        notificationsMenu.style.display = "none";
+    if (!currentUser) {
+
+        alert("يجب تسجيل الدخول أولاً");
         return;
 
     }
 
-    notificationsMenu.style.display = "block";
+    try {
+
+        await addDoc(collection(db, "messages"), {
+
+            uid: currentUser.uid,
+
+            name: currentUserData?.name || currentUser.email,
+
+            username: currentUserData?.username || "",
+
+            user: currentUser.email,
+
+            text: text,
+
+            createdAt: serverTimestamp()
+
+        });
+
+        messageInput.value = "";
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(error.message);
+
+    }
+
+}
+
+// =========================
+// تحميل الرسائل
+// =========================
+
+function loadMessages() {
 
     const q = query(
 
-        collection(db, "notifications", currentUser.uid, "items"),
+        collection(db, "messages"),
 
-        orderBy("createdAt", "desc")
+        orderBy("createdAt")
 
     );
 
     onSnapshot(q, (snapshot) => {
 
-        notificationsList.innerHTML = "";
-
-        if (snapshot.empty) {
-
-            notificationsList.innerHTML = "<p style='color:white'>لا توجد إشعارات</p>";
-            return;
-
-        }
+        messages.innerHTML = "";
 
         snapshot.forEach((docItem) => {
 
             const data = docItem.data();
 
-            notificationsList.innerHTML += `
+            let sender = "";
 
-            <div
-            onclick="window.location='private-chat.html?uid=${data.fromUid}'"
-            style="
-                background:#333;
-                color:white;
-                padding:10px;
-                margin-bottom:10px;
-                border-radius:10px;
-                cursor:pointer;
-            ">
+            if (data.uid) {
 
-                <b>${data.fromName}</b>
+                sender = `
 
-                <br>
+                <a
+                href="private-chat.html?uid=${data.uid}"
+                style="
+                    color:#d4
 
-                ${data.text}
+                    // =========================
+// تسجيل الخروج
+// =========================
 
-            </div>
+logoutBtn.addEventListener("click", async () => {
 
-            `;
+    try {
 
-        });
+        await signOut(auth);
 
-    });
+        window.location.href = "login.html";
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("حدث خطأ أثناء تسجيل الخروج");
+
+    }
 
 });
+}
