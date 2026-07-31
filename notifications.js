@@ -3,6 +3,7 @@ import { auth, db } from "./firebase.js";
 import {
     collection,
     query,
+    where, 
     onSnapshot,
     updateDoc,
     doc
