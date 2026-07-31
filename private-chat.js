@@ -20,12 +20,13 @@ const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 
-// قراءة UID من الرابط
 const params = new URLSearchParams(window.location.search);
 const otherUid = params.get("uid");
 
 let currentUid = "";
 let chatId = "";
+let currentUserData = null;
+let otherUserData = null;
 
 function createChatId(uid1, uid2) {
     return [uid1, uid2].sort().join("_");
@@ -34,36 +35,53 @@ function createChatId(uid1, uid2) {
 onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
+
         window.location.href = "login.html";
         return;
+
     }
 
     currentUid = user.uid;
+
     chatId = createChatId(currentUid, otherUid);
 
-    // بيانات المستخدم الآخر
-    const userRef = doc(db, "users", otherUid);
-    const userSnap = await getDoc(userRef);
+    // بيانات المستخدم الحالي
+    const mySnap = await getDoc(doc(db, "users", currentUid));
 
-    if (userSnap.exists()) {
-        chatTitle.innerHTML = "💬 " + userSnap.data().name;
+    if (mySnap.exists()) {
+        currentUserData = mySnap.data();
+    }
+
+    // بيانات المستخدم الآخر
+    const otherSnap = await getDoc(doc(db, "users", otherUid));
+
+    if (otherSnap.exists()) {
+
+        otherUserData = otherSnap.data();
+
+        chatTitle.innerHTML = "💬 " + otherUserData.name;
+
     } else {
+
         chatTitle.innerHTML = "المستخدم غير موجود";
+
     }
 
     loadMessages();
 
 });
 
-// إرسال رسالة
 sendBtn.addEventListener("click", sendMessage);
 
 messageInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-        sendMessage();
-    }
-});
 
+    if (e.key === "Enter") {
+
+        sendMessage();
+
+    }
+
+});
 async function sendMessage() {
 
     const text = messageInput.value.trim();
@@ -72,12 +90,27 @@ async function sendMessage() {
 
     try {
 
+        // حفظ الرسالة
         await addDoc(
             collection(db, "privateChats", chatId, "messages"),
             {
                 sender: currentUid,
                 receiver: otherUid,
+                senderName: currentUserData.name,
                 text: text,
+                createdAt: serverTimestamp()
+            }
+        );
+
+        // إنشاء إشعار للطرف الآخر
+        await addDoc(
+            collection(db, "notifications", otherUid, "items"),
+            {
+                fromUid: currentUid,
+                fromName: currentUserData.name,
+                text: text,
+                chatId: chatId,
+                read: false,
                 createdAt: serverTimestamp()
             }
         );
@@ -87,6 +120,7 @@ async function sendMessage() {
     } catch (error) {
 
         console.error(error);
+
         alert(error.message);
 
     }
@@ -105,9 +139,9 @@ function loadMessages() {
 
         messages.innerHTML = "";
 
-        snapshot.forEach((doc) => {
+        snapshot.forEach((docItem) => {
 
-            const data = doc.data();
+            const data = docItem.data();
 
             const mine = data.sender === currentUid;
 
@@ -120,6 +154,9 @@ function loadMessages() {
                 margin:10px 0;
                 border-radius:12px;
                 text-align:${mine ? "left" : "right"};
+                max-width:75%;
+                margin-${mine ? "left" : "right"}:auto;
+                word-break:break-word;
             ">
 
                 ${data.text}
@@ -134,4 +171,4 @@ function loadMessages() {
 
     });
 
-                             }
+}
