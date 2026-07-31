@@ -6,7 +6,9 @@ import {
   query,
   orderBy,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -22,9 +24,10 @@ const logoutBtn = document.getElementById("logoutBtn");
 const userName = document.getElementById("userName");
 
 let currentUser = null;
+let currentUserData = null;
 
 // التحقق من تسجيل الدخول
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
         window.location.href = "login.html";
@@ -32,7 +35,22 @@ onAuthStateChanged(auth, (user) => {
     }
 
     currentUser = user;
-    userName.textContent = "👤 " + user.email;
+
+    // قراءة بيانات المستخدم من Firestore
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+
+        currentUserData = userSnap.data();
+
+        userName.textContent = "👤 " + currentUserData.name;
+
+    } else {
+
+        userName.textContent = "👤 " + user.email;
+
+    }
 
     loadMessages();
 
@@ -42,9 +60,13 @@ onAuthStateChanged(auth, (user) => {
 sendBtn.addEventListener("click", sendMessage);
 
 messageInput.addEventListener("keydown", (e) => {
+
     if (e.key === "Enter") {
+
         sendMessage();
+
     }
+
 });
 
 async function sendMessage() {
@@ -53,17 +75,24 @@ async function sendMessage() {
 
     if (text === "") return;
 
-    if (!currentUser) {
-        alert("يجب تسجيل الدخول أولاً");
-        return;
-    }
+    if (!currentUser) return;
 
     try {
 
         await addDoc(collection(db, "messages"), {
+
+            uid: currentUser.uid,
+
+            name: currentUserData?.name || currentUser.email,
+
+            username: currentUserData?.username || "",
+
             user: currentUser.email,
+
             text: text,
+
             createdAt: serverTimestamp()
+
         });
 
         messageInput.value = "";
@@ -71,6 +100,7 @@ async function sendMessage() {
     } catch (error) {
 
         console.error(error);
+
         alert(error.message);
 
     }
@@ -81,24 +111,68 @@ async function sendMessage() {
 function loadMessages() {
 
     const q = query(
+
         collection(db, "messages"),
+
         orderBy("createdAt")
+
     );
 
     onSnapshot(q, (snapshot) => {
 
         messages.innerHTML = "";
 
-        snapshot.forEach((doc) => {
+        snapshot.forEach((docItem) => {
 
-            const data = doc.data();
+            const data = docItem.data();
+
+            // لو الرسالة الجديدة فيها uid يبقى الاسم يفتح الشات الخاص
+            let sender = "";
+
+            if (data.uid) {
+
+                sender = `
+                <a
+                href="private-chat.html?uid=${data.uid}"
+                style="
+                    color:#d4af37;
+                    text-decoration:none;
+                    font-weight:bold;
+                    cursor:pointer;
+                ">
+                    ${data.name || data.user}
+                </a>
+                `;
+
+            } else {
+
+                // الرسائل القديمة
+                sender = `
+                <b style="color:#d4af37;">
+                    ${data.user}
+                </b>
+                `;
+
+            }
 
             messages.innerHTML += `
-                <div style="background:#222;padding:12px;margin-bottom:10px;border-radius:12px;color:white;">
-                    <b style="color:#d4af37;">${data.user}</b>
-                    <br><br>
-                    ${data.text}
-                </div>
+
+                      <div style="
+                background:#222;
+                padding:12px;
+                margin-bottom:10px;
+                border-radius:12px;
+                color:white;
+            ">
+
+                ${sender}
+
+                <br><br>
+
+                ${data.text}
+
+            </div>
+
             `;
 
         });
@@ -112,7 +186,18 @@ function loadMessages() {
 // تسجيل الخروج
 logoutBtn.addEventListener("click", async () => {
 
-    await signOut(auth);
-    window.location.href = "login.html";
+    try {
+
+        await signOut(auth);
+
+        window.location.href = "login.html";
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("حدث خطأ أثناء تسجيل الخروج");
+
+    }
 
 });
