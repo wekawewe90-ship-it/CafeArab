@@ -94,6 +94,9 @@ async function sendMessage() {
         await addDoc(
             collection(db, "privateChats", chatId, "messages"),
             {
+                await addDoc(
+    collection(db, "privateChats", chatId, "messages"),
+               
                 sender: currentUid,
                 receiver: otherUid,
                 senderName: currentUserData?.name || 
