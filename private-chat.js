@@ -92,6 +92,39 @@ color:#999;
 </span>
 `;       
 
+const statusRef = doc(db, "users", otherUid);
+
+onSnapshot(statusRef, (snap) => {
+
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+
+    const status =
+    document.getElementById("userStatus");
+
+    if (!status) return;
+
+    if (data.online) {
+
+        status.innerHTML =
+        "🟢 متصل الآن";
+
+        status.style.color =
+        "#32CD32";
+
+    } else {
+
+        status.innerHTML =
+        "⚫ غير متصل";
+
+        status.style.color =
+        "#999";
+
+    }
+
+});
+            
     } catch (e) {
 
         console.error(e);
