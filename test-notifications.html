@@ -1,45 +1,6 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>اختبار الإشعارات</title>
-
-<style>
-body{
-background:#111;
-color:white;
-font-family:Arial;
-padding:20px;
-}
-
-.card{
-background:#222;
-padding:15px;
-margin:10px 0;
-border-radius:12px;
-}
-</style>
-
-</head>
-
-<body>
-
-<h2>اختبار الإشعارات</h2>
-
-<div id="list">
-جارى التحميل...
-</div>
-
 <script type="module">
 
-import { auth, db } from "./firebase.js";
-
-import {
-collection,
-onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { auth } from "./firebase.js";
 
 import {
 onAuthStateChanged
@@ -47,35 +8,20 @@ onAuthStateChanged
 
 const list=document.getElementById("list");
 
+list.innerHTML="بدأ التنفيذ";
+
 onAuthStateChanged(auth,(user)=>{
 
-if(!user){
+if(user){
 
-list.innerHTML="لم يتم تسجيل الدخول";
+list.innerHTML="✅ تم تسجيل الدخول";
 
-return;
+}else{
 
-}
-
-const ref=collection(
-db,
-"notifications",
-user.uid,
-"items"
-);
-
-onSnapshot(ref,(snapshot)=>{
-
-list.innerHTML="";
-
-if(snapshot.empty){
-
-list.innerHTML="<h3>لا توجد إشعارات</h3>";
-
-return;
+list.innerHTML="❌ غير مسجل دخول";
 
 }
 
-snapshot.forEach((doc)=>{
+});
 
-const
+</script>
