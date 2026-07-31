@@ -85,19 +85,20 @@ function loadNotifications(){
 
             item.onclick = async()=>{
 
-                try{
+                try {
 
-                    await updateDoc(docItem.ref,{
+    await updateDoc(docItem.ref, {
+        read: true
+    });
 
-                        read:true
+    console.log("تم تحديث الإشعار");
 
-                    });
+} catch (e) {
 
-                }catch(e){
+    alert(e.message);
+    console.error(e);
 
-                    console.error(e);
-
-                }
+}
 
                 notificationsMenu.style.display="none";
 
