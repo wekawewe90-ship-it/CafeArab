@@ -3,95 +3,103 @@ import { auth, db } from "./firebase.js";
 import {
     collection,
     query,
-    where,
-    orderBy,
-    onSnapshot
+    onSnapshot,
+    updateDoc,
+    doc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
-const notificationBtn = document.getElementById("notificationBtn");
-const notificationsMenu = document.getElementById("notificationsMenu");
-const notificationsList = document.getElementById("notificationsList");
+const notificationBtn =
+document.getElementById("notificationBtn");
+
+const notificationsMenu =
+document.getElementById("notificationsMenu");
+
+const notificationsList =
+document.getElementById("notificationsList");
 
 let currentUid = "";
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth,(user)=>{
 
-    if (!user) return;
+    if(!user) return;
 
     currentUid = user.uid;
 
-    loadNotifications(currentUid);
+    loadNotifications();
 
 });
 
-function loadNotifications(uid) {
+function loadNotifications(){
 
     const q = query(
 
-        collection(db, "notifications", uid, "items"),
-
+        collection(
+            db,
+            "notifications",
+            currentUid,
+            "items"
+        )
 
     );
 
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(q,(snapshot)=>{
 
-        const count = snapshot.size;
-
-        if (count > 0) {
-
-            notificationBtn.innerHTML =
-                `🔔 <span style="
-                background:red;
-                color:white;
-                border-radius:50%;
-                padding:2px 7px;
-                font-size:12px;
-                margin-right:4px;
-                ">${count}</span>`;
-
-        } else {
-
-            notificationBtn.innerHTML = "🔔";
-
-        }
+        let unread = 0;
 
         notificationsList.innerHTML = "";
 
-        if (count === 0) {
-
-            notificationsList.innerHTML =
-                "<div style='padding:10px;text-align:center'>لا توجد إشعارات</div>";
-
-            return;
-
-        }
-
-                       snapshot.forEach((docItem) => {
+           snapshot.forEach((docItem)=>{
 
             const data = docItem.data();
+
+            if(data.read === false){
+
+                unread++;
+
+            }
 
             const item = document.createElement("div");
 
             item.className = "card";
+
             item.style.marginBottom = "10px";
+
             item.style.cursor = "pointer";
 
             item.innerHTML = `
+
                 <b>${data.fromName}</b>
+
                 <br>
+
                 ${data.text}
+
             `;
 
-            item.onclick = () => {
+            item.onclick = async()=>{
 
-                notificationsMenu.style.display = "none";
+                try{
 
-                window.location.href =
-                    `private-chat.html?uid=${data.fromUid}`;
+                    await updateDoc(docItem.ref,{
+
+                        read:true
+
+                    });
+
+                }catch(e){
+
+                    console.error(e);
+
+                }
+
+                notificationsMenu.style.display="none";
+
+                window.location.href=
+                `private-chat.html?uid=${data.fromUid}`;
 
             };
 
@@ -99,29 +107,49 @@ function loadNotifications(uid) {
 
         });
 
+        if(unread>0){
+
+            notificationBtn.innerHTML=
+            `🔔 <span style="
+            background:red;
+            color:white;
+            border-radius:50%;
+            padding:2px 7px;
+            font-size:12px;
+            ">${unread}</span>`;
+
+        }else{
+
+            notificationBtn.innerHTML="🔔";
+
+        }
+
     });
 
-}
+                }
 
-notificationBtn.addEventListener("click", (e) => {
+notificationBtn.addEventListener("click",(e)=>{
 
     e.stopPropagation();
 
     notificationsMenu.style.display =
-        notificationsMenu.style.display === "block"
-            ? "none"
-            : "block";
+    notificationsMenu.style.display==="block"
+    ? "none"
+    : "block";
 
 });
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click",(e)=>{
 
-    if (
+    if(
+
         !notificationsMenu.contains(e.target) &&
-        e.target !== notificationBtn
-    ) {
 
-        notificationsMenu.style.display = "none";
+        e.target!==notificationBtn
+
+    ){
+
+        notificationsMenu.style.display="none";
 
     }
 
