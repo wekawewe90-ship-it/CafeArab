@@ -8,7 +8,8 @@ import {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp
+    serverTimestamp,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -79,13 +80,17 @@ onAuthStateChanged(auth, async (user) => {
 
             otherUserData = otherSnap.data();
 
-            chatTitle.innerHTML = "💬 " + otherUserData.name;
-
-        } else {
-
-            chatTitle.innerHTML = "💬 مستخدم";
-
-        }
+     chatTitle.innerHTML = `
+💬 ${otherUserData.name}
+<br>
+<span id="userStatus"
+style="
+font-size:13px;
+color:#999;
+">
+جارى التحميل...
+</span>
+`;       
 
     } catch (e) {
 
