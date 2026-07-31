@@ -43,6 +43,10 @@ await setDoc(doc(db, "users", user.uid), {
 
     bio: "",
 
+    online: true,
+
+    lastSeen: serverTimestamp(),
+
     createdAt: serverTimestamp()
 
 });
