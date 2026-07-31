@@ -39,18 +39,30 @@ onAuthStateChanged(auth, async (user) => {
 
     currentUser = user;
 
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
+    try {
 
-    if (userSnap.exists()) {
+        const userSnap = await getDoc(doc(db, "users", user.uid));
 
-        currentUserData = userSnap.data();
+        if (userSnap.exists()) {
 
-        userName.textContent = "👤 " + currentUserData.name;
+            currentUserData = userSnap.data();
 
-    } else {
+            userName.textContent =
+                "👤 " + currentUserData.name;
 
-        userName.textContent = "👤 " + user.email;
+        } else {
+
+            userName.textContent =
+                "👤 " + user.email;
+
+        }
+
+    } catch (e) {
+
+        console.error(e);
+
+        userName.textContent =
+            "👤 " + user.email;
 
     }
 
@@ -58,14 +70,17 @@ onAuthStateChanged(auth, async (user) => {
 
 });
 
-// زر الجرس (مؤقت)
-if(notificationBtn){
+// زر الإشعارات (مؤقت)
+if (notificationBtn) {
 
-notificationBtn.addEventListener("click",()=>{
+    notificationBtn.addEventListener("click", () => {
 
-alert("📬 الإشعارات قريباً");
+        alert("📬 الإشعارات قريباً");
 
-});
+    });
+
+}
+
 // =========================
 // إرسال رسالة
 // =========================
@@ -88,12 +103,7 @@ async function sendMessage() {
 
     if (text === "") return;
 
-    if (!currentUser) {
-
-        alert("يجب تسجيل الدخول أولاً");
-        return;
-
-    }
+    if (!currentUser) return;
 
     try {
 
@@ -152,13 +162,10 @@ function loadMessages() {
             if (data.uid) {
 
                 sender = `
-
                 <a
-                href="private-chat.html?uid=${data.uid}"
-                style="
-                    color:#d4
+                href="private
 
-                    // =========================
+              // =========================
 // تسجيل الخروج
 // =========================
 
@@ -179,4 +186,7 @@ logoutBtn.addEventListener("click", async () => {
     }
 
 });
-}
+
+// =========================
+// نهاية الملف
+// =========================
