@@ -96,7 +96,7 @@ async function sendMessage() {
             {
                 sender: currentUid,
                 receiver: otherUid,
-                senderName: currentUserData.name,
+                senderName: currentUserData?.name || auth.currentUser.email,
                 text: text,
                 createdAt: serverTimestamp()
             }
