@@ -82,6 +82,7 @@ messageInput.addEventListener("keydown", (e) => {
     }
 
 });
+
 async function sendMessage() {
 
     const text = messageInput.value.trim();
@@ -94,13 +95,9 @@ async function sendMessage() {
         await addDoc(
             collection(db, "privateChats", chatId, "messages"),
             {
-                await addDoc(
-    collection(db, "privateChats", chatId, "messages"),
-               
                 sender: currentUid,
                 receiver: otherUid,
-                senderName: currentUserData?.name || 
-                auth.currentUser.email,
+                senderName: currentUserData?.name || auth.currentUser.email,
                 text: text,
                 createdAt: serverTimestamp()
             }
@@ -111,7 +108,7 @@ async function sendMessage() {
             collection(db, "notifications", otherUid, "items"),
             {
                 fromUid: currentUid,
-                fromName: currentUserData.name,
+                fromName: currentUserData?.name || auth.currentUser.email,
                 text: text,
                 chatId: chatId,
                 read: false,
@@ -124,12 +121,11 @@ async function sendMessage() {
     } catch (error) {
 
         console.error(error);
-
         alert(error.message);
 
     }
 
-}
+} 
 
 // تحميل الرسائل
 function loadMessages() {
