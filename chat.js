@@ -8,7 +8,8 @@ import {
     onSnapshot,
     serverTimestamp,
     doc,
-    getDoc
+    getDoc, 
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -222,6 +223,18 @@ logoutBtn.addEventListener("click", async () => {
 
     try {
 
+        if(currentUser){
+
+            await updateDoc(
+                doc(db,"users",currentUser.uid),
+                {
+                    online:false,
+                    lastSeen:serverTimestamp()
+                }
+            );
+
+        }
+
         await signOut(auth);
 
         window.location.href = "login.html";
@@ -234,5 +247,4 @@ logoutBtn.addEventListener("click", async () => {
 
     }
 
-});
-
+}); 
