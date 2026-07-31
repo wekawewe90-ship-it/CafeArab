@@ -34,9 +34,6 @@ function loadNotifications(uid) {
 
         collection(db, "notifications", uid, "items"),
 
-        where("read", "==", false),
-
-        orderBy("createdAt", "desc")
 
     );
 
