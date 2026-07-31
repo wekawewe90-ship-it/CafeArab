@@ -8,7 +8,8 @@ import {
   onSnapshot,
   serverTimestamp,
   doc,
-  getDoc
+  getDoc,
+  where
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -21,6 +22,7 @@ const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const notificationBtn = document.getElementById("notificationBtn");
 const userName = document.getElementById("userName");
 
 let currentUser = null;
@@ -30,13 +32,15 @@ let currentUserData = null;
 onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
+
         window.location.href = "login.html";
         return;
+
     }
 
     currentUser = user;
 
-    // قراءة بيانات المستخدم من Firestore
+    // قراءة بيانات المستخدم
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -54,120 +58,104 @@ onAuthStateChanged(auth, async (user) => {
 
     loadMessages();
 
-});
-
-// إرسال رسالة
-sendBtn.addEventListener("click", sendMessage);
-
-messageInput.addEventListener("keydown", (e) => {
-
-    if (e.key === "Enter") {
-
-        sendMessage();
-
-    }
+    loadNotifications();
 
 });
+// =========================
+// تحميل الإشعارات
+// =========================
 
-async function sendMessage() {
-
-    const text = messageInput.value.trim();
-
-    if (text === "") return;
-
-    if (!currentUser) return;
-
-    try {
-
-        await addDoc(collection(db, "messages"), {
-
-            uid: currentUser.uid,
-
-            name: currentUserData?.name || currentUser.email,
-
-            username: currentUserData?.username || "",
-
-            user: currentUser.email,
-
-            text: text,
-
-            createdAt: serverTimestamp()
-
-        });
-
-        messageInput.value = "";
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
-
-}
-
-// تحميل الرسائل
-function loadMessages() {
+function loadNotifications() {
 
     const q = query(
 
-        collection(db, "messages"),
+        collection(db, "notifications", currentUser.uid, "items"),
 
-        orderBy("createdAt")
+        where("read", "==", false)
 
     );
 
     onSnapshot(q, (snapshot) => {
 
-        messages.innerHTML = "";
+        const count = snapshot.size;
+
+        if (count === 0) {
+
+            notificationBtn.textContent = "🔔";
+
+        } else {
+
+            notificationBtn.textContent = `🔔 ${count}`;
+
+        }
+
+    });
+
+}
+
+// =========================
+// الضغط على زر الإشعارات
+// =========================
+
+notificationBtn.addEventListener("click", () => {
+
+    alert("قريبًا: قائمة الإشعارات 📬");
+
+});
+
+const notificationsMenu = document.getElementById("notificationsMenu");
+const notificationsList = document.getElementById("notificationsList");
+
+notificationBtn.addEventListener("click", () => {
+
+    if (notificationsMenu.style.display === "block") {
+
+        notificationsMenu.style.display = "none";
+        return;
+
+    }
+
+    notificationsMenu.style.display = "block";
+
+    const q = query(
+
+        collection(db, "notifications", currentUser.uid, "items"),
+
+        orderBy("createdAt", "desc")
+
+    );
+
+    onSnapshot(q, (snapshot) => {
+
+        notificationsList.innerHTML = "";
+
+        if (snapshot.empty) {
+
+            notificationsList.innerHTML = "<p style='color:white'>لا توجد إشعارات</p>";
+            return;
+
+        }
 
         snapshot.forEach((docItem) => {
 
             const data = docItem.data();
 
-            // لو الرسالة الجديدة فيها uid يبقى الاسم يفتح الشات الخاص
-            let sender = "";
+            notificationsList.innerHTML += `
 
-            if (data.uid) {
-
-                sender = `
-                <a
-                href="private-chat.html?uid=${data.uid}"
-                style="
-                    color:#d4af37;
-                    text-decoration:none;
-                    font-weight:bold;
-                    cursor:pointer;
-                ">
-                    ${data.name || data.user}
-                </a>
-                `;
-
-            } else {
-
-                // الرسائل القديمة
-                sender = `
-                <b style="color:#d4af37;">
-                    ${data.user}
-                </b>
-                `;
-
-            }
-
-            messages.innerHTML += `
-
-                      <div style="
-                background:#222;
-                padding:12px;
-                margin-bottom:10px;
-                border-radius:12px;
+            <div
+            onclick="window.location='private-chat.html?uid=${data.fromUid}'"
+            style="
+                background:#333;
                 color:white;
+                padding:10px;
+                margin-bottom:10px;
+                border-radius:10px;
+                cursor:pointer;
             ">
 
-                ${sender}
+                <b>${data.fromName}</b>
 
-                <br><br>
+                <br>
 
                 ${data.text}
 
@@ -177,27 +165,6 @@ function loadMessages() {
 
         });
 
-        messages.scrollTop = messages.scrollHeight;
-
     });
-
-}
-
-// تسجيل الخروج
-logoutBtn.addEventListener("click", async () => {
-
-    try {
-
-        await signOut(auth);
-
-        window.location.href = "login.html";
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("حدث خطأ أثناء تسجيل الخروج");
-
-    }
 
 });
