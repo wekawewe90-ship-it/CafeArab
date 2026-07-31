@@ -1,54 +1,110 @@
 import { auth, db } from "./firebase.js";
 
 import {
-    collection,
-    query,
-    where,
-    orderBy,
-    onSnapshot
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  updateDoc,
+  doc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
-    onAuthStateChanged
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
-const notificationBtn = document.getElementById("notificationBtn");
-const notificationsMenu = document.getElementById("notificationsMenu");
-const notificationsList = document.getElementById("notificationsList");
+const notificationBtn =
+document.getElementById("notificationBtn");
 
-onAuthStateChanged(auth, (user) => {
+const notificationsMenu =
+document.getElementById("notificationsMenu");
 
-    if (!user) return;
+const notificationsList =
+document.getElementById("notificationsList");
 
-    loadNotifications(user.uid);
+let currentUid = "";
+
+onAuthStateChanged(auth,(user)=>{
+
+    if(!user) return;
+
+    currentUid = user.uid;
+
+    loadNotifications();
 
 });
 
-function loadNotifications(uid) {
+function loadNotifications(){
 
     const q = query(
 
+        collection(
+            db,
+            "notifications",
+            currentUid,
+            "items"
+        ),
+
+        where("read","==",false),
+
+        orderBy("createdAt","desc")
+
+    );
+
+    onSnapshot(q,(snapshot)=>{
+
+        const count = snapshot.size;
+
+        if(count>0){
+
+            notificationBtn.innerHTML =
+            `🔔 <span style="
+                background:red;
+                color:#fff;
+                padding:2px 7px;
+                border-radius:20px;
+                font-size:12px;
+            ">${count}</span>`;
+
+        }else{
+
+            notificationBtn.innerHTML="🔔";
+
+        }
+
+        notificationsList.innerHTML="";
+
+        if(count===0){
+
+            notificationsList.innerHTML=
+            "<p style='text-align:center'>لا توجد إشعارات</p>";
+
+            return;
+
+        }
+
+               function loadNotifications(uid) {
+
+    const q = query(
         collection(db, "notifications", uid, "items"),
-
         where("read", "==", false),
-
         orderBy("createdAt", "desc")
-
     );
 
     onSnapshot(q, (snapshot) => {
 
         const count = snapshot.size;
 
-        notificationBtn.textContent =
-            count > 0 ? `🔔 ${count}` : "🔔";
+        notificationBtn.innerHTML =
+            count > 0 ? `🔔 <span style="color:red">${count}</span>` : "🔔";
 
         notificationsList.innerHTML = "";
 
         if (count === 0) {
 
             notificationsList.innerHTML =
-                "<p>لا توجد إشعارات</p>";
+                "<div style='padding:10px'>لا توجد إشعارات</div>";
 
             return;
 
@@ -58,21 +114,28 @@ function loadNotifications(uid) {
 
             const data = docItem.data();
 
-            notificationsList.innerHTML += `
+            const item = document.createElement("div");
 
-            <div class="card"
-            style="margin-bottom:10px;cursor:pointer"
-            onclick="location.href='private-chat.html?uid=${data.fromUid}'">
+            item.className = "card";
+            item.style.marginBottom = "10px";
+            item.style.cursor = "pointer";
 
+            item.innerHTML = `
                 <b>${data.fromName}</b>
-
                 <br>
-
                 ${data.text}
-
-            </div>
-
             `;
+
+            item.onclick = () => {
+
+                notificationsMenu.style.display = "none";
+
+                window.location.href =
+                    `private-chat.html?uid=${data.fromUid}`;
+
+            };
+
+            notificationsList.appendChild(item);
 
         });
 
@@ -80,15 +143,23 @@ function loadNotifications(uid) {
 
 }
 
-notificationBtn.addEventListener("click", () => {
+notificationBtn.addEventListener("click", (e) => {
 
-    if (notificationsMenu.style.display === "block") {
+    e.stopPropagation();
+
+    notificationsMenu.style.display =
+        notificationsMenu.style.display === "block"
+            ? "none"
+            : "block";
+
+});
+
+document.addEventListener("click", (e) => {
+
+    if (!notificationsMenu.contains(e.target) &&
+        e.target !== notificationBtn) {
 
         notificationsMenu.style.display = "none";
-
-    } else {
-
-        notificationsMenu.style.display = "block";
 
     }
 
