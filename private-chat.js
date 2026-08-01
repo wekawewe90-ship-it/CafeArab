@@ -1,19 +1,19 @@
 import { auth, db } from "./firebase.js";
 
 import {
-doc,
-getDoc,
-collection,
-addDoc,
-query,
-orderBy,
-onSnapshot,
-serverTimestamp,
-updateDoc
+    doc,
+    getDoc,
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    onSnapshot,
+    serverTimestamp,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
-onAuthStateChanged
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
 const chatTitle = document.getElementById("chatTitle");
@@ -22,7 +22,6 @@ const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 
 const params = new URLSearchParams(window.location.search);
-
 const otherUid = params.get("uid");
 
 let currentUid = "";
@@ -31,186 +30,189 @@ let chatId = "";
 let currentUserData = null;
 let otherUserData = null;
 
-function createChatId(uid1, uid2){
+function createChatId(uid1, uid2) {
 
-return [uid1,uid2].sort().join("_");
-
-}
-
-onAuthStateChanged(auth,async(user)=>{
-
-if(!user){
-
-window.location.href="login.html";
-return;
+    return [uid1, uid2].sort().join("_");
 
 }
 
-currentUid=user.uid;
+onAuthStateChanged(auth, async (user) => {
 
-chatId=createChatId(currentUid,otherUid);
+    if (!user) {
 
-try{
+        window.location.href = "login.html";
+        return;
 
-const mySnap=await getDoc(doc(db,"users",currentUid));
+    }
 
-if(mySnap.exists()){
+    currentUid = user.uid;
 
-currentUserData=mySnap.data();
+    chatId = createChatId(currentUid, otherUid);
 
-}
+    const mySnap = await getDoc(doc(db, "users", currentUid));
 
-const otherSnap=await getDoc(doc(db,"users",otherUid));
+    if (mySnap.exists()) {
 
-if(otherSnap.exists()){
+        currentUserData = mySnap.data();
 
-otherUserData=otherSnap.data();
+    }
 
-chatTitle.innerHTML=`
-💬 ${otherUserData.name}
-<br>
-<span id="userStatus"
-style="
-font-size:13px;
-color:#999;
-">
-جارى التحميل...
-</span>
-`;
-    const statusRef = doc(db,"users",otherUid);
+    const otherRef = doc(db, "users", otherUid);
 
-onSnapshot(statusRef,(snap)=>{
+    onSnapshot(otherRef, (snap) => {
 
-if(!snap.exists()) return;
+        if (!snap.exists()) {
 
-const data = snap.data();
+            chatTitle.innerHTML = "💬 مستخدم";
 
-const status = document.getElementById("userStatus");
+            return;
 
-if(!status) return;
+        }
 
-if(data.online){
+        otherUserData = snap.data();
 
-status.innerHTML="🟢 متصل الآن";
-status.style.color="#2ecc71";
+        chatTitle.innerHTML = `
+            💬 ${otherUserData.name}
+            <br>
+            <span id="userStatus"
+            style="font-size:13px;color:${otherUserData.online ? "#2ecc71" : "#999"}">
+            ${otherUserData.online ? "🟢 متصل الآن" : "⚫ غير متصل"}
+            </span>
+        `;
 
-}else{
+    });
 
-status.innerHTML="⚫ غير متصل";
-status.style.color="#999";
+    loadMessages();
 
-}
+});
+// ======================
+// إرسال الرسائل
+// ======================
+
+sendBtn.addEventListener("click", sendMessage);
+
+messageInput.addEventListener("keydown", (e) => {
+
+    if (e.key === "Enter") {
+
+        sendMessage();
+
+    }
 
 });
 
-}catch(e){
+async function sendMessage() {
 
-console.error(e);
+    const text = messageInput.value.trim();
 
-chatTitle.innerHTML="💬 مستخدم";
+    if (text === "") return;
 
-}
+    try {
 
-loadMessages();
+        // حفظ الرسالة
+        await addDoc(
+            collection(db, "privateChats", chatId, "messages"),
+            {
+                sender: currentUid,
+                receiver: otherUid,
+                senderName: currentUserData?.name || auth.currentUser.email,
+                text: text,
+                read: false,
+                createdAt: serverTimestamp()
+            }
+        );
 
-});
+        // إنشاء إشعار للطرف الآخر
+        await addDoc(
+            collection(db, "notifications", otherUid, "items"),
+            {
+                fromUid: currentUid,
+                fromName: currentUserData?.name || auth.currentUser.email,
+                text: text,
+                chatId: chatId,
+                read: false,
+                createdAt: serverTimestamp()
+            }
+        );
 
-sendBtn.addEventListener("click",sendMessage);
+        messageInput.value = "";
 
-messageInput.addEventListener("keydown",(e)=>{
+    } catch (error) {
 
-if(e.key==="Enter"){
+        console.error(error);
 
-sendMessage();
+        alert(error.message);
 
-}
+    }
 
-});
+    }
+// ======================
+// تحميل الرسائل
+// ======================
 
-async function sendMessage(){
+function loadMessages() {
 
-const text = messageInput.value.trim();
+    const q = query(
+        collection(db, "privateChats", chatId, "messages"),
+        orderBy("createdAt", "asc")
+    );
 
-if(text==="") return;
+    onSnapshot(q, async (snapshot) => {
 
-try{
+        messages.innerHTML = "";
 
-await addDoc(
-collection(db,"privateChats",chatId,"messages"),
-{
-sender:currentUid,
-receiver:otherUid,
-senderName:currentUserData?.name || auth.currentUser.email,
-text:text,
-createdAt:serverTimestamp(),
-read:false
-}
-);
+        for (const docItem of snapshot.docs) {
 
-await addDoc(
-collection(db,"notifications",otherUid,"items"),
-{
-fromUid
-    function loadMessages(){
+            const data = docItem.data();
 
-const q=query(
+            // تعليم الرسالة كمقروءة
+            if (
+                data.receiver === currentUid &&
+                data.read === false
+            ) {
 
-collection(db,"privateChats",chatId,"messages"),
+                await updateDoc(docItem.ref, {
+                    read: true
+                });
 
-orderBy("createdAt","asc")
+            }
 
-);
+            const mine = data.sender === currentUid;
 
-onSnapshot(q,async(snapshot)=>{
+            const bubble = document.createElement("div");
 
-messages.innerHTML="";
+            bubble.style.background =
+                mine ? "#d4af37" : "#333";
 
-for(const docItem of snapshot.docs){
+            bubble.style.color =
+                mine ? "#000" : "#fff";
 
-const data=docItem.data();
+            bubble.style.padding = "12px";
+            bubble.style.margin = "10px 0";
+            bubble.style.borderRadius = "12px";
+            bubble.style.maxWidth = "75%";
+            bubble.style.wordBreak = "break-word";
 
-if(data.receiver===currentUid && data.read===false){
+            if (mine) {
 
-await updateDoc(docItem.ref,{
+                bubble.style.marginLeft = "auto";
+                bubble.style.textAlign = "left";
 
-read:true
+            } else {
 
-});
+                bubble.style.marginRight = "auto";
+                bubble.style.textAlign = "right";
 
-}
+            }
 
-const mine=data.sender===currentUid;
+            bubble.innerHTML = data.text;
 
-const bubble=document.createElement("div");
+            messages.appendChild(bubble);
 
-bubble.style.background=mine?"#d4af37":"#333";
-bubble.style.color=mine?"#000":"#fff";
-bubble.style.padding="12px";
-bubble.style.margin="10px 0";
-bubble.style.borderRadius="12px";
-bubble.style.maxWidth="75%";
-bubble.style.wordBreak="break-word";
+        }
 
-if(mine){
+        messages.scrollTop = messages.scrollHeight;
 
-bubble.style.marginLeft="auto";
-bubble.style.textAlign="left";
+    });
 
-}else{
-
-bubble.style.marginRight="auto";
-bubble.style.textAlign="right";
-
-}
-
-bubble.innerHTML=data.text;
-
-messages.appendChild(bubble);
-
-}
-
-messages.scrollTop=messages.scrollHeight;
-
-});
-
-}
+                    }
