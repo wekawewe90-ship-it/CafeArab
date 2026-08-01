@@ -111,16 +111,20 @@ async function sendMessage() {
 
         // حفظ الرسالة
         await addDoc(
-            collection(db, "privateChats", chatId, "messages"),
-            {
-                sender: currentUid,
-                receiver: otherUid,
-                senderName: currentUserData?.name || auth.currentUser.email,
-                text: text,
-                read: false,
-                createdAt: serverTimestamp()
-            }
-        );
+collection(db,"privateChats",chatId,"messages"),
+{
+sender:currentUid,
+receiver:otherUid,
+senderName:currentUserData?.name || auth.currentUser.email,
+text:text,
+
+status:"sent",
+
+read:false,
+
+createdAt:serverTimestamp()
+}
+);
 
         // إنشاء إشعار للطرف الآخر
         await addDoc(
