@@ -209,7 +209,42 @@ function loadMessages() {
 
             }
 
-            bubble.innerHTML = data.text;
+            let status = "";
+
+if (mine) {
+
+    if (data.read) {
+
+        status = `
+        <div style="
+        margin-top:5px;
+        font-size:12px;
+        color:#4FC3F7;
+        text-align:right;
+        ">
+        ✓✓
+        </div>`;
+
+    } else {
+
+        status = `
+        <div style="
+        margin-top:5px;
+        font-size:12px;
+        color:#bbb;
+        text-align:right;
+        ">
+        ✓
+        </div>`;
+
+    }
+
+}
+
+bubble.innerHTML = `
+${data.text}
+${status}
+`; 
 
             messages.appendChild(bubble);
 
