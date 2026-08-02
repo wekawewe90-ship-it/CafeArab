@@ -26,7 +26,7 @@ const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const imageBtn =
 document.getElementById("imageBtn");
-
+imageInput.click
 const imageInput =
 document.getElementById("imageInput");
 const logoutBtn = document.getElementById("logoutBtn");
