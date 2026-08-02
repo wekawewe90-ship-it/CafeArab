@@ -24,6 +24,11 @@ import {
 const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
+const imageBtn =
+document.getElementById("imageBtn");
+
+const imageInput =
+document.getElementById("imageInput");
 const logoutBtn = document.getElementById("logoutBtn");
 const notificationBtn = document.getElementById("notificationBtn");
 const userName = document.getElementById("userName");
