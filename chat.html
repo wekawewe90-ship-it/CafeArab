@@ -88,26 +88,28 @@ margin-bottom:20px;
 <div style="display:flex;gap:10px;">
 
 <input
+<div class="sendBox">
 
+<input
 id="messageInput"
+type="text"
+placeholder="اكتب رسالة...">
 
-class="input"
+<input
+type="file"
+id="imageInput"
+accept="image/*"
+style="display:none;">
 
-placeholder="اكتب رسالتك..."
-
-style="margin:0;">
-
-<button
-
-id="sendBtn"
-
-class="btn"
-
-style="width:140px;margin:0;">
-
-📤 إرسال
-
+<button id="imageBtn">
+📷
 </button>
+
+<button id="sendBtn">
+➤
+</button>
+
+</div>
 
 </div>
 
