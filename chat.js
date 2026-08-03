@@ -1,22 +1,20 @@
 import { auth, db } from "./firebase.js";
 
 import {
-
 collection,
 addDoc,
 query,
 orderBy,
 onSnapshot,
 serverTimestamp
-
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
-
 onAuthStateChanged,
 signOut
-
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+// عناصر الصفحة
 
 const messages=document.getElementById("messages");
 const messageInput=document.getElementById("messageInput");
@@ -26,8 +24,13 @@ const imageBtn=document.getElementById("imageBtn");
 const imageInput=document.getElementById("imageInput");
 
 const logoutBtn=document.getElementById("logoutBtn");
+const userName=document.getElementById("userName");
+
+// بيانات المستخدم
 
 let currentUser=null;
+
+// تسجيل الدخول
 
 onAuthStateChanged(auth,(user)=>{
 
@@ -40,21 +43,28 @@ return;
 
 currentUser=user;
 
+userName.innerHTML="👤 "+(user.displayName || user.email);
+
 loadMessages();
 
 });
 
-logoutBtn.onclick=()=>{
+// تسجيل الخروج
+
+logoutBtn.addEventListener("click",()=>{
 
 signOut(auth);
 
-};
+});
 
-imageBtn.onclick=()=>{
+// اختيار صورة
+
+imageBtn.addEventListener("click",()=>{
 
 imageInput.click();
 
-};// =========================
+});
+// =========================
 // إرسال رسالة نصية
 // =========================
 
@@ -98,14 +108,14 @@ async function sendMessage() {
 
         console.error(error);
 
-        alert(error.message);
+        alert("حدث خطأ أثناء إرسال الرسالة");
 
     }
 
 }
 
 // =========================
-// رفع صورة إلى Cloudinary
+// رفع صورة
 // =========================
 
 imageInput.addEventListener("change", async () => {
@@ -123,17 +133,11 @@ imageInput.addEventListener("change", async () => {
     try {
 
         const response = await fetch(
-
             "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
-
             {
-
                 method: "POST",
-
                 body: formData
-
             }
-
         );
 
         const data = await response.json();
@@ -167,76 +171,83 @@ imageInput.addEventListener("change", async () => {
 // تحميل الرسائل
 // =========================
 
-function loadMessages(){
+function loadMessages() {
 
     const q = query(
 
-        collection(db,"messages"),
+        collection(db, "messages"),
 
-        orderBy("createdAt","asc")
+        orderBy("createdAt", "asc")
 
     );
 
-    onSnapshot(q,(snapshot)=>{
+    onSnapshot(q, (snapshot) => {
 
-        messages.innerHTML="";
+        messages.innerHTML = "";
 
-        snapshot.forEach((docItem)=>{
+        snapshot.forEach((docItem) => {
 
             const data = docItem.data();
 
             const box = document.createElement("div");
 
-            box.className="message";
+            box.className = "message";
 
-            if(data.uid===currentUser.uid){
+            if (data.uid === currentUser.uid) {
 
-                box.classList.add("mine");
+                box.classList.add("me");
 
-            }else{
+            } else {
 
                 box.classList.add("other");
 
             }
 
             // رسالة نصية
-            if(data.type==="text"){
+            if (data.type === "text") {
 
-                box.innerHTML=`
+                box.innerHTML = `
 
-                <div class="sender">
+                    <div class="sender">
+                        ${data.user}
+                    </div>
 
-                ${data.user}
-
-                </div>
-
-                <div class="text">
-
-                ${data.text}
-
-                </div>
+                    <div class="text">
+                        ${data.text}
+                    </div>
 
                 `;
 
             }
 
             // رسالة صورة
-            if(data.type==="image"){
+            if (data.type === "image") {
 
-                box.innerHTML=`
+                box.innerHTML = `
 
-                <div class="sender">
+                    <div class="sender">
+                        ${data.user}
+                    </div>
 
-                ${data.user}
+                    <img
+                        src="${data.image}"
+                        style="
+                            max-width:220px;
+                            border-radius:12px;
+                            cursor:pointer;
+                        "
+                    >
 
-                </div>
+                `;
 
-                <img
+            }
 
-                src="${data.image}"
+            messages.appendChild(box);
 
-                style="
-                max-width:250px;
-                border-radius:12px;
-                cursor
-                
+        });
+
+        messages.scrollTop = messages.scrollHeight;
+
+    });
+
+    }
