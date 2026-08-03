@@ -1,102 +1,63 @@
 import { auth, db } from "./firebase.js";
 
 import {
-    collection,
-    addDoc,
-    query,
-    orderBy,
-    onSnapshot,
-    serverTimestamp,
-    doc,
-    getDoc, 
-    updateDoc
+
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot,
+serverTimestamp
+
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
-    onAuthStateChanged,
-    signOut
+
+onAuthStateChanged,
+signOut
+
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
-// =========================
-// عناصر الصفحة
-// =========================
+const messages=document.getElementById("messages");
+const messageInput=document.getElementById("messageInput");
+const sendBtn=document.getElementById("sendBtn");
 
-const messages = document.getElementById("messages");
-const messageInput = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
-const imageBtn =
-document.getElementById("imageBtn");
-imageInput.click
-const imageInput =
-document.getElementById("imageInput");
-const logoutBtn = document.getElementById("logoutBtn");
-const notificationBtn = document.getElementById("notificationBtn");
-const userName = document.getElementById("userName");
+const imageBtn=document.getElementById("imageBtn");
+const imageInput=document.getElementById("imageInput");
 
-// =========================
+const logoutBtn=document.getElementById("logoutBtn");
 
-let currentUser = null;
-let currentUserData = null;
+let currentUser=null;
 
-// =========================
-// تسجيل الدخول
-// =========================
+onAuthStateChanged(auth,(user)=>{
 
-onAuthStateChanged(auth, async (user) => {
+if(!user){
 
-    if (!user) {
+location.href="login.html";
+return;
 
-        window.location.href = "login.html";
-        return;
+}
 
-    }
+currentUser=user;
 
-    currentUser = user;
-
-    try {
-
-        const userRef = doc(db, "users", user.uid);
-
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-
-            currentUserData = userSnap.data();
-
-            userName.textContent =
-                "👤 " + currentUserData.name;
-
-        } else {
-
-            userName.textContent =
-                "👤 " + user.email;
-
-        }
-
-    } catch (error) {
-
-        console.error(error);
-
-        userName.textContent =
-            "👤 " + user.email;
-
-    }
-
-    loadMessages();
+loadMessages();
 
 });
 
+logoutBtn.onclick=()=>{
 
+signOut(auth);
 
+};
+
+imageBtn.onclick=()=>{
+
+imageInput.click();
+
+};// =========================
+// إرسال رسالة نصية
 // =========================
-// إرسال رسالة
-// =========================
 
-imageBtn.addEventListener("click", () => {
-
-    imageInput.click();
-
-});
 sendBtn.addEventListener("click", sendMessage);
 
 messageInput.addEventListener("keydown", (e) => {
@@ -115,19 +76,15 @@ async function sendMessage() {
 
     if (text === "") return;
 
-    if (!currentUser) return;
-
     try {
 
         await addDoc(collection(db, "messages"), {
 
             uid: currentUser.uid,
 
-            name: currentUserData?.name || currentUser.email,
-
-            username: currentUserData?.username || "",
-
             user: currentUser.email,
+
+            type: "text",
 
             text: text,
 
@@ -148,113 +105,138 @@ async function sendMessage() {
 }
 
 // =========================
-// تحميل الرسائل
+// رفع صورة إلى Cloudinary
 // =========================
 
-function loadMessages() {
+imageInput.addEventListener("change", async () => {
 
-    const q = query(
+    if (!imageInput.files.length) return;
 
-        collection(db, "messages"),
+    const file = imageInput.files[0];
 
-        orderBy("createdAt")
+    const formData = new FormData();
 
-    );
+    formData.append("file", file);
 
-    onSnapshot(q, (snapshot) => {
-
-        messages.innerHTML = "";
-
-        snapshot.forEach((docItem) => {
-
-            const data = docItem.data();
-
-            let sender = "";
-
-            if (data.uid) {
-
-                sender = `
-                <a
-                    href="private-chat.html?uid=${data.uid}"
-                    style="
-                        color:#d4af37;
-                        text-decoration:none;
-                        font-weight:bold;
-                        cursor:pointer;
-                    ">
-                    ${data.name || data.user}
-                </a>
-                `;
-
-            } else {
-
-                sender = `
-                <b style="color:#d4af37;">
-                    ${data.user}
-                </b>
-                `;
-
-            }
-
-            messages.innerHTML += `
-
-            <div style="
-                background:#222;
-                padding:12px;
-                margin-bottom:10px;
-                border-radius:12px;
-                color:white;
-            ">
-
-                ${sender}
-
-                <br><br>
-
-                ${data.text}
-
-            </div>
-
-            `;
-
-        });
-
-        messages.scrollTop = messages.scrollHeight;
-
-    });
-
-                   }
-
-
-// =========================
-// تسجيل الخروج
-// =========================
-
-logoutBtn.addEventListener("click", async () => {
+    formData.append("upload_preset", "ml_default");
 
     try {
 
-        if(currentUser){
+        const response = await fetch(
 
-            await updateDoc(
-                doc(db,"users",currentUser.uid),
-                {
-                    online:false,
-                    lastSeen:serverTimestamp()
-                }
-            );
+            "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
 
-        }
+            {
 
-        await signOut(auth);
+                method: "POST",
 
-        window.location.href = "login.html";
+                body: formData
+
+            }
+
+        );
+
+        const data = await response.json();
+
+        await addDoc(collection(db, "messages"), {
+
+            uid: currentUser.uid,
+
+            user: currentUser.email,
+
+            type: "image",
+
+            image: data.secure_url,
+
+            createdAt: serverTimestamp()
+
+        });
+
+        imageInput.value = "";
 
     } catch (error) {
 
         console.error(error);
 
-        alert("حدث خطأ أثناء تسجيل الخروج");
+        alert("فشل رفع الصورة");
 
     }
 
-}); 
+});
+// =========================
+// تحميل الرسائل
+// =========================
+
+function loadMessages(){
+
+    const q = query(
+
+        collection(db,"messages"),
+
+        orderBy("createdAt","asc")
+
+    );
+
+    onSnapshot(q,(snapshot)=>{
+
+        messages.innerHTML="";
+
+        snapshot.forEach((docItem)=>{
+
+            const data = docItem.data();
+
+            const box = document.createElement("div");
+
+            box.className="message";
+
+            if(data.uid===currentUser.uid){
+
+                box.classList.add("mine");
+
+            }else{
+
+                box.classList.add("other");
+
+            }
+
+            // رسالة نصية
+            if(data.type==="text"){
+
+                box.innerHTML=`
+
+                <div class="sender">
+
+                ${data.user}
+
+                </div>
+
+                <div class="text">
+
+                ${data.text}
+
+                </div>
+
+                `;
+
+            }
+
+            // رسالة صورة
+            if(data.type==="image"){
+
+                box.innerHTML=`
+
+                <div class="sender">
+
+                ${data.user}
+
+                </div>
+
+                <img
+
+                src="${data.image}"
+
+                style="
+                max-width:250px;
+                border-radius:12px;
+                cursor
+                
