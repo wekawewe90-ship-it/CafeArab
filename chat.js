@@ -92,6 +92,11 @@ onAuthStateChanged(auth, async (user) => {
 // إرسال رسالة
 // =========================
 
+imageBtn.addEventListener("click", () => {
+
+    imageInput.click();
+
+});
 sendBtn.addEventListener("click", sendMessage);
 
 messageInput.addEventListener("keydown", (e) => {
