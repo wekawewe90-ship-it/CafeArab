@@ -16,57 +16,56 @@ signOut
 
 // عناصر الصفحة
 
-const messages=document.getElementById("messages");
-const messageInput=document.getElementById("messageInput");
-const sendBtn=document.getElementById("sendBtn");
+const messages = document.getElementById("messages");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
 
-const imageBtn=document.getElementById("imageBtn");
-const imageInput=document.getElementById("imageInput");
+const imageBtn = document.getElementById("imageBtn");
+const imageInput = document.getElementById("imageInput");
 
-const logoutBtn=document.getElementById("logoutBtn");
-const userName=document.getElementById("userName");
+const logoutBtn = document.getElementById("logoutBtn");
+const userName = document.getElementById("userName");
 
-// بيانات المستخدم
+let currentUser = null;
 
-let currentUser=null;
+// التحقق من تسجيل الدخول
 
-// تسجيل الدخول
+onAuthStateChanged(auth, (user) => {
 
-onAuthStateChanged(auth,(user)=>{
+    if (!user) {
 
-if(!user){
+        window.location.href = "login.html";
 
-location.href="login.html";
-return;
+        return;
 
-}
+    }
 
-currentUser=user;
+    currentUser = user;
 
-userName.innerHTML="👤 "+(user.displayName || user.email);
+    userName.innerHTML = "👤 " + (user.displayName || user.email);
 
-loadMessages();
+    loadMessages();
 
 });
 
 // تسجيل الخروج
 
-logoutBtn.addEventListener("click",()=>{
+logoutBtn.addEventListener("click", () => {
 
-signOut(auth);
-
-});
-
-// اختيار صورة
-
-imageBtn.addEventListener("click",()=>{
-
-imageInput.click();
+    signOut(auth);
 
 });
-// =========================
+
+// فتح معرض الصور
+
+imageBtn.addEventListener("click", () => {
+
+    imageInput.click();
+
+});
+// ==========================
 // إرسال رسالة نصية
-// =========================
+// ==========================
 
 sendBtn.addEventListener("click", sendMessage);
 
@@ -104,9 +103,9 @@ async function sendMessage() {
 
         messageInput.value = "";
 
-    } catch (error) {
+    } catch (err) {
 
-        console.error(error);
+        console.error(err);
 
         alert("حدث خطأ أثناء إرسال الرسالة");
 
@@ -114,9 +113,9 @@ async function sendMessage() {
 
 }
 
-// =========================
-// رفع صورة
-// =========================
+// ==========================
+// رفع صورة إلى Cloudinary
+// ==========================
 
 imageInput.addEventListener("change", async () => {
 
@@ -133,11 +132,17 @@ imageInput.addEventListener("change", async () => {
     try {
 
         const response = await fetch(
+
             "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
+
             {
+
                 method: "POST",
+
                 body: formData
+
             }
+
         );
 
         const data = await response.json();
@@ -158,27 +163,24 @@ imageInput.addEventListener("change", async () => {
 
         imageInput.value = "";
 
-    } catch (error) {
+    } catch (err) {
 
-        console.error(error);
+        console.error(err);
 
         alert("فشل رفع الصورة");
 
     }
 
 });
-// =========================
+// ==========================
 // تحميل الرسائل
-// =========================
+// ==========================
 
 function loadMessages() {
 
     const q = query(
-
         collection(db, "messages"),
-
         orderBy("createdAt", "asc")
-
     );
 
     onSnapshot(q, (snapshot) => {
@@ -203,41 +205,28 @@ function loadMessages() {
 
             }
 
-            // رسالة نصية
             if (data.type === "text") {
 
                 box.innerHTML = `
-
-                    <div class="sender">
-                        ${data.user}
-                    </div>
-
-                    <div class="text">
-                        ${data.text}
-                    </div>
-
+                    <div class="sender">${data.user}</div>
+                    <div>${data.text}</div>
                 `;
 
-            }
-
-            // رسالة صورة
-            if (data.type === "image") {
+            } else if (data.type === "image") {
 
                 box.innerHTML = `
-
-                    <div class="sender">
-                        ${data.user}
-                    </div>
+                    <div class="sender">${data.user}</div>
 
                     <img
                         src="${data.image}"
                         style="
                             max-width:220px;
                             border-radius:12px;
+                            margin-top:8px;
                             cursor:pointer;
                         "
+                        onclick="window.open('${data.image}','_blank')"
                     >
-
                 `;
 
             }
@@ -250,4 +239,4 @@ function loadMessages() {
 
     });
 
-    }
+                                }
