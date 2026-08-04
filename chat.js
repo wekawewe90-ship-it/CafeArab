@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase.js";
 
-import { 
+import {
 collection,
 addDoc,
 query,
@@ -14,8 +14,6 @@ onAuthStateChanged,
 signOut
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
-// عناصر الصفحة
-
 const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -28,13 +26,11 @@ const userName = document.getElementById("userName");
 
 let currentUser = null;
 
-// التحقق من تسجيل الدخول
-
 onAuthStateChanged(auth, (user) => {
 
     if (!user) {
 
-        window.location.href = "login.html";
+        location.href = "login.html";
 
         return;
 
@@ -42,32 +38,28 @@ onAuthStateChanged(auth, (user) => {
 
     currentUser = user;
 
-    userName.innerHTML = "👤 " + (user.displayName || user.email);
+    userName.textContent = "👤 " + (user.displayName || user.email);
 
     loadMessages();
 
 });
 
-// تسجيل الخروج
-
-logoutBtn.addEventListener("click", () => {
+logoutBtn.onclick = () => {
 
     signOut(auth);
 
-});
+};
 
-// فتح معرض الصور
-
-imageBtn.addEventListener("click", () => {
+imageBtn.onclick = () => {
 
     imageInput.click();
 
-});
-// ==========================
+};
+// =========================
 // إرسال رسالة نصية
-// ==========================
+// =========================
 
-sendBtn.addEventListener("click", sendMessage);
+sendBtn.onclick = sendMessage;
 
 messageInput.addEventListener("keydown", (e) => {
 
@@ -83,7 +75,7 @@ async function sendMessage() {
 
     const text = messageInput.value.trim();
 
-    if (text === "") return;
+    if (!text) return;
 
     try {
 
@@ -107,15 +99,13 @@ async function sendMessage() {
 
         console.error(err);
 
-        alert("حدث خطأ أثناء إرسال الرسالة");
-
     }
 
 }
 
-// ==========================
-// رفع صورة إلى Cloudinary
-// ==========================
+// =========================
+// إرسال صورة
+// =========================
 
 imageInput.addEventListener("change", async () => {
 
@@ -161,20 +151,16 @@ imageInput.addEventListener("change", async () => {
 
         });
 
-        imageInput.value = "";
-
     } catch (err) {
 
         console.error(err);
 
-        alert("فشل رفع الصورة");
-
     }
 
 });
-// ==========================
+// =========================
 // تحميل الرسائل
-// ==========================
+// =========================
 
 function loadMessages() {
 
@@ -196,36 +182,29 @@ function loadMessages() {
             box.className = "message";
 
             if (data.uid === currentUser.uid) {
-
                 box.classList.add("me");
-
             } else {
-
                 box.classList.add("other");
-
             }
 
             if (data.type === "text") {
 
                 box.innerHTML = `
-    <div
-        class="sender"
-        style="cursor:pointer;color:#d4af37;font-weight:bold"
-        onclick="openPrivateChat('${data.uid}','${data.user}')"
-    >
-        ${data.user}
-    </div>
+                    <div class="sender">
+                        ${data.user}
+                    </div>
 
-    <div>
-        ${data.text}
-    </div>
-`;
+                    <div class="text">
+                        ${data.text}
+                    </div>
                 `;
 
             } else if (data.type === "image") {
 
                 box.innerHTML = `
-                    <div class="sender">${data.user}</div>
+                    <div class="sender">
+                        ${data.user}
+                    </div>
 
                     <img
                         src="${data.image}"
@@ -237,6 +216,7 @@ function loadMessages() {
                         "
                         onclick="window.open('${data.image}','_blank')"
                     >
+                `;
 
             }
 
@@ -248,17 +228,4 @@ function loadMessages() {
 
     });
 
-                                }
-// ==========================
-// فتح المحادثة الخاصة
-// ==========================
-
-window.openPrivateChat = function(uid, name) {
-
-    // منع فتح شات مع نفسك
-    if (uid === currentUser.uid) return;
-
-    window.location.href =
-        `privateChat.html?uid=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}`;
-
-};
+            }
