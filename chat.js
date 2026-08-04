@@ -237,7 +237,6 @@ function loadMessages() {
                         "
                         onclick="window.open('${data.image}','_blank')"
                     >
-                `;
 
             }
 
