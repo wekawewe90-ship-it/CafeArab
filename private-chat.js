@@ -1,82 +1,3 @@
-import { auth, db } from "./firebase.js";
-
-import {
-collection,
-addDoc,
-query,
-where,
-orderBy,
-onSnapshot,
-serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-
-import {
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-
-// عناصر الصفحة
-
-const messages = document.getElementById("privateMessages");
-
-const messageInput = document.getElementById("messageInput");
-
-const sendBtn = document.getElementById("sendBtn");
-
-const imageBtn = document.getElementById("imageBtn");
-
-const imageInput = document.getElementById("imageInput");
-
-const chatUser = document.getElementById("chatUser");
-
-const backBtn = document.getElementById("backBtn");
-
-// بيانات المستخدم
-
-let currentUser = null;
-
-// قراءة uid من الرابط
-
-const params = new URLSearchParams(window.location.search);
-
-const otherUid = params.get("uid");
-
-const otherName = params.get("name");
-
-chatUser.innerHTML = "👤 " + (otherName || "مستخدم");
-
-// رجوع
-
-backBtn.addEventListener("click", () => {
-
-    window.location.href = "chat.html";
-
-});
-
-// التحقق من تسجيل الدخول
-
-onAuthStateChanged(auth, (user) => {
-
-    if (!user) {
-
-        window.location.href = "login.html";
-
-        return;
-
-    }
-
-    currentUser = user;
-
-});
-// ==========================
-// إنشاء معرف المحادثة
-// ==========================
-
-function getChatId() {
-
-    return [currentUser.uid, otherUid].sort().join("_");
-
-}
-
 // ==========================
 // إرسال رسالة نصية
 // ==========================
@@ -84,42 +5,39 @@ function getChatId() {
 sendBtn.addEventListener("click", sendMessage);
 
 messageInput.addEventListener("keydown", (e) => {
-
     if (e.key === "Enter") {
-
         sendMessage();
-
     }
-
 });
 
 async function sendMessage() {
 
     const text = messageInput.value.trim();
 
-    if (text === "") return;
+    if (!text) return;
 
     try {
 
-        await addDoc(collection(db, "privateMessages"), {
+        await addDoc(
 
-            chatId: getChatId(),
+            collection(
+                db,
+                "privateChats",
+                getChatId(),
+                "messages"
+            ),
 
-            sender: currentUser.uid,
+            {
+                sender: currentUser.uid,
+                receiver: otherUid,
+                user: currentUser.email,
+                type: "text",
+                text: text,
+                createdAt: serverTimestamp(),
+                likes: 0
+            }
 
-            receiver: otherUid,
-
-            user: currentUser.email,
-
-            type: "text",
-
-            text: text,
-
-            createdAt: serverTimestamp(),
-
-            likes: 0
-
-        });
+        );
 
         messageInput.value = "";
 
@@ -127,21 +45,15 @@ async function sendMessage() {
 
         console.error(err);
 
-    }
-
-}
-
-// ==========================
-// فتح معرض الصور
+    }// ==========================
+// رفع صورة إلى Cloudinary
 // ==========================
 
 imageBtn.addEventListener("click", () => {
 
     imageInput.click();
 
-});// ==========================
-// رفع صورة إلى Cloudinary
-// ==========================
+});
 
 imageInput.addEventListener("change", async () => {
 
@@ -166,25 +78,26 @@ imageInput.addEventListener("change", async () => {
 
         const data = await response.json();
 
-        await addDoc(collection(db, "privateMessages"), {
+        await addDoc(
 
-            chatId: getChatId(),
+            collection(
+                db,
+                "privateChats",
+                getChatId(),
+                "messages"
+            ),
 
-            sender: currentUser.uid,
+            {
+                sender: currentUser.uid,
+                receiver: otherUid,
+                user: currentUser.email,
+                type: "image",
+                image: data.secure_url,
+                createdAt: serverTimestamp(),
+                likes: 0
+            }
 
-            receiver: otherUid,
-
-            user: currentUser.email,
-
-            type: "image",
-
-            image: data.secure_url,
-
-            createdAt: serverTimestamp(),
-
-            likes: 0
-
-        });
+        );
 
         imageInput.value = "";
 
@@ -197,7 +110,9 @@ imageInput.addEventListener("change", async () => {
     }
 
 });
+    
 
+}
 // ==========================
 // تحميل الرسائل الخاصة
 // ==========================
@@ -206,9 +121,12 @@ function loadPrivateMessages() {
 
     const q = query(
 
-        collection(db, "privateMessages"),
-
-        where("chatId", "==", getChatId()),
+        collection(
+            db,
+            "privateChats",
+            getChatId(),
+            "messages"
+        ),
 
         orderBy("createdAt", "asc")
 
@@ -240,10 +158,10 @@ function loadPrivateMessages() {
 
                 box.innerHTML = `
                     <div class="sender">${data.user}</div>
-                    <div>${data.text}</div>
+                    <div class="text">${data.text}</div>
                 `;
 
-            } else {
+            } else if (data.type === "image") {
 
                 box.innerHTML = `
                     <div class="sender">${data.user}</div>
@@ -253,7 +171,9 @@ function loadPrivateMessages() {
                         style="
                             max-width:220px;
                             border-radius:12px;
+                            cursor:pointer;
                         "
+                        onclick="window.open('${data.image}','_blank')"
                     >
                 `;
 
@@ -267,22 +187,4 @@ function loadPrivateMessages() {
 
     });
 
-}
-
-// تشغيل المحادثة
-
-onAuthStateChanged(auth, (user) => {
-
-    if (!user) {
-
-        location.href = "login.html";
-
-        return;
-
-    }
-
-    currentUser = user;
-
-    loadPrivateMessages();
-
-});
+                }
