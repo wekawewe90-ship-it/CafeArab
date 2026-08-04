@@ -1,298 +1,82 @@
-// ========================================
-// Cafe Arab Chat.js V2
-// الجزء الأول
-// ========================================
+import { db, storage, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, ref, uploadBytes, getDownloadURL } from './firebase.js';
 
-import { auth, db } from "./firebase.js";
+const chatBox = document.getElementById('chat-box');
+const messageInput = document.getElementById('message-input');
+const fileInput = document.getElementById('file-input');
+const sendBtn = document.getElementById('send-btn');
 
-import {
-collection,
-addDoc,
-query,
-orderBy,
-onSnapshot,
-serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+// 1. الاستماع للرسائل في الوقت الفعلي (Real-time)
+const q = query(collection(db, "public_messages"), orderBy("timestamp", "asc"));
 
-import {
-onAuthStateChanged,
-signOut
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-
-// ==========================
-// عناصر الصفحة
-// ==========================
-
-const messages = document.getElementById("messages");
-
-const messageInput = document.getElementById("messageInput");
-
-const sendBtn = document.getElementById("sendBtn");
-
-const imageBtn = document.getElementById("imageBtn");
-
-const imageInput = document.getElementById("imageInput");
-
-const logoutBtn = document.getElementById("logoutBtn");
-
-const userName = document.getElementById("userName");
-
-// ==========================
-
-let currentUser = null;
-
-// ==========================
-// تسجيل الدخول
-// ==========================
-
-onAuthStateChanged(auth, (user) => {
-
-    if (!user) {
-
-        window.location.href = "login.html";
-
-        return;
-
-    }
-
-    currentUser = user;
-
-    userName.textContent =
-        "👤 " + (user.displayName || user.email);
-
-    initializeChat();
-
+onSnapshot(q, (snapshot) => {
+    chatBox.innerHTML = ''; // تنظيف الشاشة لإعادة الرسم
+    snapshot.forEach((doc) => {
+        const data = doc.data();
+        renderMessage(data);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-// ==========================
-
-function initializeChat() {
-
-    loadMessages();
-
-}
-
-// ==========================
-// تسجيل الخروج
-// ==========================
-
-logoutBtn.addEventListener("click", () => {
-
-    signOut(auth);
-
-});
-
-// ==========================
-// فتح معرض الصور
-// ==========================
-
-imageBtn.addEventListener("click", () => {
-
-    imageInput.click();
-
-});
-// ========================================
-// إرسال الرسائل النصية
-// ========================================
-
-sendBtn.addEventListener("click", sendMessage);
-
-messageInput.addEventListener("keydown", (e) => {
-
-    if (e.key === "Enter") {
-
-        sendMessage();
-
-    }
-
-});
-
+// 2. دالة إرسال الرسالة
 async function sendMessage() {
-
     const text = messageInput.value.trim();
+    const file = fileInput.files[0];
 
-    if (!text) return;
+    if (!text && !file) return;
 
-    try {
+    let mediaUrl = '';
 
-        await addDoc(collection(db, "messages"), {
+    // تقييد رفع الميديا بالصور فقط للشات العام
+    if (file) {
+        if (!file.type.startsWith('image/')) {
+            alert('عفواً، مسموح بإرسال الصور فقط في الشات العام!');
+            fileInput.value = '';
+            return;
+        }
 
-            uid: currentUser.uid,
-
-            user: currentUser.displayName || currentUser.email,
-
-            type: "text",
-
-            text: text,
-
-            createdAt: serverTimestamp()
-
-        });
-
-        messageInput.value = "";
-
-    } catch (err) {
-
-        console.error("Send Error:", err);
-
-        alert("حدث خطأ أثناء إرسال الرسالة");
-
+        const storageRef = ref(storage, `public_images/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        mediaUrl = await getDownloadURL(snapshot.ref);
     }
 
+    // حفظ الرسالة في Firestore
+    await addDoc(collection(db, "public_messages"), {
+        text: text,
+        imageUrl: mediaUrl,
+        timestamp: serverTimestamp()
+    });
+
+    // إعادة تصفير المدخلات
+    messageInput.value = '';
+    fileInput.value = '';
 }
 
-// ========================================
-// رفع الصور
-// ========================================
+// 3. عرض الرسالة على الشاشة
+function renderMessage(data) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message my-message';
 
-imageInput.addEventListener("change", async () => {
-
-    if (!imageInput.files.length) return;
-
-    const file = imageInput.files[0];
-
-    const formData = new FormData();
-
-    formData.append("file", file);
-
-    formData.append("upload_preset", "ml_default");
-
-    try {
-
-        const response = await fetch(
-
-            "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
-
-            {
-
-                method: "POST",
-
-                body: formData
-
-            }
-
-        );
-
-        const data = await response.json();
-
-        await addDoc(collection(db, "messages"), {
-
-            uid: currentUser.uid,
-
-            user: currentUser.displayName || currentUser.email,
-
-            type: "image",
-
-            image: data.secure_url,
-
-            createdAt: serverTimestamp()
-
-        });
-
-        imageInput.value = "";
-
-    } catch (err) {
-
-        console.error("Upload Error:", err);
-
-        alert("فشل رفع الصورة");
-
+    if (data.text) {
+        const p = document.createElement('p');
+        p.textContent = data.text;
+        msgDiv.appendChild(p);
     }
 
-});
-// ========================================
-// تحميل الرسائل
-// ========================================
+    if (data.imageUrl) {
+        const img = document.createElement('img');
+        img.src = data.imageUrl;
+        img.style.maxWidth = '100%';
+        img.style.borderRadius = '8px';
+        msgDiv.appendChild(img);
+    }
 
-function loadMessages() {
-
-    const q = query(
-
-        collection(db, "messages"),
-
-        orderBy("createdAt", "asc")
-
-    );
-
-    onSnapshot(q, (snapshot) => {
-
-        messages.innerHTML = "";
-
-        snapshot.forEach((doc) => {
-
-            const data = doc.data();
-
-            const box = document.createElement("div");
-
-            box.className = "message";
-
-            if (data.uid === currentUser.uid) {
-
-                box.classList.add("me");
-
-            } else {
-
-                box.classList.add("other");
-
-            }
-
-            let content = "";
-
-            if (data.type === "text") {
-
-                content = `
-                    <div class="sender"
-                         style="font-weight:bold;color:#d4af37;cursor:pointer"
-                         onclick="openPrivateChat('${data.uid}','${data.user}')">
-                        ${data.user}
-                    </div>
-
-                    <div class="text">
-                        ${data.text}
-                    </div>
-                `;
-
-            }
-
-            if (data.type === "image") {
-
-                content = `
-                    <div class="sender"
-                         style="font-weight:bold;color:#d4af37;cursor:pointer"
-                         onclick="openPrivateChat('${data.uid}','${data.user}')">
-                        ${data.user}
-                    </div>
-
-                    <img
-                    // ========================================
-// فتح المحادثة الخاصة
-// ========================================
-
-window.openPrivateChat = function(uid, name) {
-
-    // لا تفتح محادثة مع نفسك
-    if (uid === currentUser.uid) return;
-
-    window.location.href =
-        "private-chat.html?uid=" +
-        encodeURIComponent(uid) +
-        "&name=" +
-        encodeURIComponent(name);
-
-};
-
-// ========================================
-// إعادة التمرير لآخر الرسائل
-// ========================================
-
-function scrollToBottom() {
-
-    messages.scrollTop = messages.scrollHeight;
-
+    chatBox.appendChild(msgDiv);
 }
 
-setInterval(() => {
-
-    scrollToBottom();
-
-}, 1000);
+// ربط الأزرار والأحداث
+if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+if (messageInput) {
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+}
