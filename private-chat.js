@@ -188,3 +188,31 @@ function loadPrivateMessages() {
     });
 
                 }
+// ==========================
+// تشغيل المحادثة
+// ==========================
+
+onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+
+        window.location.href = "login.html";
+        return;
+
+    }
+
+    currentUser = user;
+
+    if (!otherUid) {
+
+        alert("لم يتم تحديد المستخدم.");
+
+        window.location.href = "users.html";
+
+        return;
+
+    }
+
+    loadPrivateMessages();
+
+});
