@@ -45,11 +45,12 @@ async function sendMessage() {
 
         console.error(err);
 
-    }// ==========================
+    }
+// ==========================
 // رفع صورة إلى Cloudinary
 // ==========================
 
-imageBtn.addEventListener("click", () => {
+imageBtn.addEventListener("click", () => 
 
     imageInput.click();
 
