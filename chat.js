@@ -308,7 +308,12 @@ function loadMessages() {
 
         });
 
-        messages.scrollTop = messages.scrollHeight;
+        if (
+    messages.scrollTop + messages.clientHeight >=
+    messages.scrollHeight - 100
+) {
+    messages.scrollTop = messages.scrollHeight;
+}
 
     });
 
@@ -344,15 +349,6 @@ function scrollBottom() {
     }
 
 }
-// =====================================
-// متابعة آخر الرسائل
-// =====================================
-
-setInterval(() => {
-
-    scrollBottom();
-
-}, 1000);
 
 // =====================================
 // نهاية الملف
