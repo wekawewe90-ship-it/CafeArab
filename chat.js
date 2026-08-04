@@ -17,10 +17,8 @@ signOut
 const messages = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
-
 const imageBtn = document.getElementById("imageBtn");
 const imageInput = document.getElementById("imageInput");
-
 const logoutBtn = document.getElementById("logoutBtn");
 const userName = document.getElementById("userName");
 
@@ -31,35 +29,35 @@ onAuthStateChanged(auth, (user) => {
     if (!user) {
 
         location.href = "login.html";
-
         return;
 
     }
 
     currentUser = user;
 
-    userName.textContent = "👤 " + (user.displayName || user.email);
+    userName.textContent =
+        "👤 " + (user.displayName || user.email);
 
     loadMessages();
 
 });
 
-logoutBtn.onclick = () => {
+logoutBtn.addEventListener("click", () => {
 
     signOut(auth);
 
-};
+});
 
-imageBtn.onclick = () => {
+imageBtn.addEventListener("click", () => {
 
     imageInput.click();
 
-};
+});
 // =========================
-// إرسال رسالة نصية
+// إرسال رسالة
 // =========================
 
-sendBtn.onclick = sendMessage;
+sendBtn.addEventListener("click", sendMessage);
 
 messageInput.addEventListener("keydown", (e) => {
 
@@ -75,36 +73,28 @@ async function sendMessage() {
 
     const text = messageInput.value.trim();
 
-    if (!text) return;
+    if (text === "") return;
 
-    try {
+    await addDoc(collection(db, "messages"), {
 
-        await addDoc(collection(db, "messages"), {
+        uid: currentUser.uid,
 
-            uid: currentUser.uid,
+        user: currentUser.email,
 
-            user: currentUser.email,
+        type: "text",
 
-            type: "text",
+        text: text,
 
-            text: text,
+        createdAt: serverTimestamp()
 
-            createdAt: serverTimestamp()
+    });
 
-        });
-
-        messageInput.value = "";
-
-    } catch (err) {
-
-        console.error(err);
-
-    }
+    messageInput.value = "";
 
 }
 
 // =========================
-// إرسال صورة
+// رفع صورة
 // =========================
 
 imageInput.addEventListener("change", async () => {
@@ -121,44 +111,8 @@ imageInput.addEventListener("change", async () => {
 
     try {
 
-        const response = await fetch(
-
-            "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
-
-            {
-
-                method: "POST",
-
-                body: formData
-
-            }
-
-        );
-
-        const data = await response.json();
-
-        await addDoc(collection(db, "messages"), {
-
-            uid: currentUser.uid,
-
-            user: currentUser.email,
-
-            type: "image",
-
-            image: data.secure_url,
-
-            createdAt: serverTimestamp()
-
-        });
-
-    } catch (err) {
-
-        console.error(err);
-
-    }
-
-});
-// =========================
+        const response = await
+            // =========================
 // تحميل الرسائل
 // =========================
 
@@ -202,46 +156,11 @@ function loadMessages() {
             } else if (data.type === "image") {
 
                 box.innerHTML = `
-                    <div
-class="sender"
-style="cursor:pointer;color:#d4af37;font-weight:bold"
-onclick="openPrivateChat('${data.uid}','${data.user}')"
->
-${data.user}
-</div>
+                    <div class="sender">
+                        ${data.user}
+                    </div>
 
                     <img
                         src="${data.image}"
                         style="
-                            max-width:220px;
-                            border-radius:12px;
-                            margin-top:8px;
-                            cursor:pointer;
-                        "
-                        onclick="window.open('${data.image}','_blank')"
-                    >
-                `;
-
-            }
-
-            messages.appendChild(box);
-
-        });
-
-        messages.scrollTop = messages.scrollHeight;
-
-    });
-
-            }
-// =========================
-// فتح محادثة خاصة
-// =========================
-
-window.openPrivateChat = function(uid, name) {
-
-    if (uid === currentUser.uid) return;
-
-    location.href =
-    `private-chat.html?uid=${uid}&name=${encodeURIComponent(name)}`;
-
-};
+                           
