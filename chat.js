@@ -1,82 +1,359 @@
-import { db, storage, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, ref, uploadBytes, getDownloadURL } from './firebase.js';
+// =====================================
+// Cafe Arab Chat V2
+// Part 1
+// =====================================
 
-const chatBox = document.getElementById('chat-box');
-const messageInput = document.getElementById('message-input');
-const fileInput = document.getElementById('file-input');
-const sendBtn = document.getElementById('send-btn');
+import { auth, db } from "./firebase.js";
 
-// 1. الاستماع للرسائل في الوقت الفعلي (Real-time)
-const q = query(collection(db, "public_messages"), orderBy("timestamp", "asc"));
+import {
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-onSnapshot(q, (snapshot) => {
-    chatBox.innerHTML = ''; // تنظيف الشاشة لإعادة الرسم
-    snapshot.forEach((doc) => {
-        const data = doc.data();
-        renderMessage(data);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
+import {
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+// ==========================
+// عناصر الصفحة
+// ==========================
+
+const messages = document.getElementById("messages");
+
+const messageInput = document.getElementById("messageInput");
+
+const sendBtn = document.getElementById("sendBtn");
+
+const imageBtn = document.getElementById("imageBtn");
+
+const imageInput = document.getElementById("imageInput");
+
+const logoutBtn = document.getElementById("logoutBtn");
+
+const userName = document.getElementById("userName");
+
+// ==========================
+
+let currentUser = null;
+
+// ==========================
+// التحقق من تسجيل الدخول
+// ==========================
+
+onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+
+        location.href = "login.html";
+
+        return;
+
+    }
+
+    currentUser = user;
+
+    if (userName) {
+
+        userName.textContent =
+            "👤 " + (user.displayName || user.email);
+
+    }
+
+    startChat();
+
 });
 
-// 2. دالة إرسال الرسالة
-async function sendMessage() {
-    const text = messageInput.value.trim();
-    const file = fileInput.files[0];
+// ==========================
 
-    if (!text && !file) return;
+function startChat() {
 
-    let mediaUrl = '';
+    loadMessages();
 
-    // تقييد رفع الميديا بالصور فقط للشات العام
-    if (file) {
-        if (!file.type.startsWith('image/')) {
-            alert('عفواً، مسموح بإرسال الصور فقط في الشات العام!');
-            fileInput.value = '';
-            return;
+}
+
+// ==========================
+// تسجيل الخروج
+// ==========================
+
+if (logoutBtn) {
+
+    logoutBtn.addEventListener("click", () => {
+
+        signOut(auth);
+
+    });
+
+}
+
+// ==========================
+// زر الصور
+// ==========================
+
+if (imageBtn) {
+
+    imageBtn.addEventListener("click", () => {
+
+        imageInput.click();
+
+    });
+
+        }
+// =====================================
+// إرسال الرسائل النصية
+// =====================================
+
+if (sendBtn) {
+
+    sendBtn.addEventListener("click", sendMessage);
+
+}
+
+if (messageInput) {
+
+    messageInput.addEventListener("keydown", (e) => {
+
+        if (e.key === "Enter") {
+
+            sendMessage();
+
         }
 
-        const storageRef = ref(storage, `public_images/${Date.now()}_${file.name}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        mediaUrl = await getDownloadURL(snapshot.ref);
-    }
-
-    // حفظ الرسالة في Firestore
-    await addDoc(collection(db, "public_messages"), {
-        text: text,
-        imageUrl: mediaUrl,
-        timestamp: serverTimestamp()
     });
 
-    // إعادة تصفير المدخلات
-    messageInput.value = '';
-    fileInput.value = '';
 }
 
-// 3. عرض الرسالة على الشاشة
-function renderMessage(data) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'message my-message';
+async function sendMessage() {
 
-    if (data.text) {
-        const p = document.createElement('p');
-        p.textContent = data.text;
-        msgDiv.appendChild(p);
+    const text = messageInput.value.trim();
+
+    if (text === "") return;
+
+    try {
+
+        await addDoc(
+
+            collection(db, "messages"),
+
+            {
+
+                uid: currentUser.uid,
+
+                user: currentUser.displayName || currentUser.email,
+
+                type: "text",
+
+                text: text,
+
+                createdAt: serverTimestamp()
+
+            }
+
+        );
+
+        messageInput.value = "";
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert("حدث خطأ أثناء إرسال الرسالة");
+
     }
 
-    if (data.imageUrl) {
-        const img = document.createElement('img');
-        img.src = data.imageUrl;
-        img.style.maxWidth = '100%';
-        img.style.borderRadius = '8px';
-        msgDiv.appendChild(img);
-    }
-
-    chatBox.appendChild(msgDiv);
 }
 
-// ربط الأزرار والأحداث
-if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-if (messageInput) {
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+// =====================================
+// رفع الصور
+// =====================================
+
+if (imageInput) {
+
+    imageInput.addEventListener("change", uploadImage);
+
+}
+
+async function uploadImage() {
+
+    if (!imageInput.files.length) return;
+
+    const file = imageInput.files[0];
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    formData.append("upload_preset", "ml_default");
+
+    try {
+
+        const response = await fetch(
+
+            "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
+
+            {
+
+                method: "POST",
+
+                body: formData
+
+            }
+
+        );
+
+        const data = await response.json();
+
+        await addDoc(
+
+            collection(db, "messages"),
+
+            {
+
+                uid: currentUser.uid,
+
+                user: currentUser.displayName || currentUser.email,
+
+                type: "image",
+
+                image: data.secure_url,
+
+                createdAt: serverTimestamp()
+
+            }
+
+        );
+
+        imageInput.value = "";
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert("فشل رفع الصورة");
+
+    }
+
+    }
+// =====================================
+// تحميل الرسائل
+// =====================================
+
+function loadMessages() {
+
+    const q = query(
+
+        collection(db, "messages"),
+
+        orderBy("createdAt", "asc")
+
+    );
+
+    onSnapshot(q, (snapshot) => {
+
+        messages.innerHTML = "";
+
+        snapshot.forEach((doc) => {
+
+            const data = doc.data();
+
+            const box = document.createElement("div");
+
+            box.className = "message";
+
+            if (data.uid === currentUser.uid) {
+
+                box.classList.add("me");
+
+            } else {
+
+                box.classList.add("other");
+
+            }
+
+            if (data.type === "text") {
+
+                box.innerHTML = `
+                    <div class="sender">
+                        ${data.user}
+                    </div>
+
+                    <div class="text">
+                        ${data.text}
+                    </div>
+                `;
+
+            }
+
+            if (data.type === "image") {
+
+                box.innerHTML = `
+                    <div class="sender">
+                        ${data.user}
+                    </div>
+
+                    <img
+                        src="${data.image}"
+                        class="chatImage"
+                        onclick="window.open('${data.image}','_blank')"
+                    >
+                `;
+
+            }
+
+            messages.appendChild(box);
+
+        });
+
+        messages.scrollTop = messages.scrollHeight;
+
     });
+
 }
+// =====================================
+// فتح المحادثة الخاصة
+// =====================================
+
+window.openPrivateChat = function(uid, name) {
+
+    if (!currentUser) return;
+
+    if (uid === currentUser.uid) return;
+
+    window.location.href =
+        "private-chat.html?uid=" +
+        encodeURIComponent(uid) +
+        "&name=" +
+        encodeURIComponent(name);
+
+};
+
+// =====================================
+// تحديث التمرير
+// =====================================
+
+function scrollBottom() {
+
+    if (messages) {
+
+        messages.scrollTop = messages.scrollHeight;
+
+    }
+
+}
+// =====================================
+// متابعة آخر الرسائل
+// =====================================
+
+setInterval(() => {
+
+    scrollBottom();
+
+}, 1000);
+
+// =====================================
+// نهاية الملف
+// =====================================
