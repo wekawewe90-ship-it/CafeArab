@@ -208,8 +208,18 @@ function loadMessages() {
             if (data.type === "text") {
 
                 box.innerHTML = `
-                    <div class="sender">${data.user}</div>
-                    <div>${data.text}</div>
+    <div
+        class="sender"
+        style="cursor:pointer;color:#d4af37;font-weight:bold"
+        onclick="openPrivateChat('${data.uid}','${data.user}')"
+    >
+        ${data.user}
+    </div>
+
+    <div>
+        ${data.text}
+    </div>
+`;
                 `;
 
             } else if (data.type === "image") {
@@ -240,3 +250,16 @@ function loadMessages() {
     });
 
                                 }
+// ==========================
+// فتح المحادثة الخاصة
+// ==========================
+
+window.openPrivateChat = function(uid, name) {
+
+    // منع فتح شات مع نفسك
+    if (uid === currentUser.uid) return;
+
+    window.location.href =
+        `privateChat.html?uid=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}`;
+
+};
