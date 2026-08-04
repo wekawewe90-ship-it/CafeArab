@@ -4,12 +4,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
 // استبدل الحقول دي ببيانات مشروعك من لوحة تحكم Firebase
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+ const firebaseConfig = {
+    apiKey: "AIzaSyCc2LiygPNKc5aWd8tRkfP-sB4OnRNfSQ",
+    authDomain: "cafearab-c6f0b.firebaseapp.com",
+    projectId: "cafearab-c6f0b",
+    storageBucket: "cafearab-c6f0b.firebasestorage.app",
+    messagingSenderId: "155925331863",
+    appId: "1:155925331863:web:10a5f1955ccfdc56fc0ed2
 };
 
 const app = initializeApp(firebaseConfig);
