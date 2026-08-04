@@ -4,7 +4,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
 // استبدل الحقول دي ببيانات مشروعك من لوحة تحكم Firebase
 const firebaseConfig = {
- const firebaseConfig = {
     apiKey: "AIzaSyCc2LiygPNKc5aWd8tRkfP-sB4OnRNfSQ",
     authDomain: "cafearab-c6f0b.firebaseapp.com",
     projectId: "cafearab-c6f0b",
