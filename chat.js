@@ -350,6 +350,17 @@ function scrollBottom() {
 
 }
 
+const usersBtn = document.getElementById("usersBtn");
+
+if (usersBtn) {
+
+    usersBtn.addEventListener("click", () => {
+
+        window.location.href = "users.html";
+
+    });
+
+}
 // =====================================
 // نهاية الملف
 // =====================================
