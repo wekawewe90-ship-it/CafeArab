@@ -111,8 +111,9 @@ function scrollBottom() {
 
     }, 100);
 
-                   }
-    // =========================
+}
+
+// =========================
 // إرسال رسالة نصية
 // =========================
 
@@ -330,7 +331,7 @@ function drawMessage(data) {
 
     bubble.className = "bubble";
 
-    if (data.type === "image") {
+  if (data.type === "image" && data.imageUrl) {
 
         const img = document.createElement("img");
 
