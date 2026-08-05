@@ -1,20 +1,139 @@
+// =====================================
+// Cafe Arab Private Chat V2
+// Part 1
+// =====================================
+
+import { auth, db } from "./firebase.js";
+
+import {
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+import {
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
 // ==========================
-// إرسال رسالة نصية
+// عناصر الصفحة
+// ==========================
+
+const messages = document.getElementById("privateMessages");
+
+const messageInput = document.getElementById("messageInput");
+
+const sendBtn = document.getElementById("sendBtn");
+
+const imageBtn = document.getElementById("imageBtn");
+
+const imageInput = document.getElementById("imageInput");
+
+const chatUser = document.getElementById("chatUser");
+
+const backBtn = document.getElementById("backBtn");
+
+// ==========================
+
+let currentUser = null;
+
+// ==========================
+// بيانات المحادثة
+// ==========================
+
+const params = new URLSearchParams(window.location.search);
+
+const otherUid = params.get("uid");
+
+const otherName = params.get("name");
+
+// ==========================
+
+if (chatUser) {
+
+    chatUser.textContent =
+        "👤 " + (otherName || "مستخدم");
+
+}
+
+// ==========================
+// رجوع
+// ==========================
+
+if (backBtn) {
+
+    backBtn.addEventListener("click", () => {
+
+        location.href = "users.html";
+
+    });
+
+}
+
+// ==========================
+// إنشاء معرف المحادثة
+// ==========================
+
+function getChatId() {
+
+    return [currentUser.uid, otherUid]
+        .sort()
+        .join("_");
+
+}
+// ==========================
+// التحقق من تسجيل الدخول
+// ==========================
+
+onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+
+        location.href = "login.html";
+        return;
+
+    }
+
+    currentUser = user;
+
+    if (!otherUid) {
+
+        alert("لم يتم تحديد المستخدم");
+
+        location.href = "users.html";
+
+        return;
+
+    }
+
+    loadPrivateMessages();
+
+});
+
+// ==========================
+// إرسال رسالة
 // ==========================
 
 sendBtn.addEventListener("click", sendMessage);
 
 messageInput.addEventListener("keydown", (e) => {
+
     if (e.key === "Enter") {
+
         sendMessage();
+
     }
+
 });
 
 async function sendMessage() {
 
     const text = messageInput.value.trim();
 
-    if (!text) return;
+    if (text === "") return;
 
     try {
 
@@ -28,13 +147,19 @@ async function sendMessage() {
             ),
 
             {
+
                 sender: currentUser.uid,
+
                 receiver: otherUid,
-                user: currentUser.email,
+
+                user: currentUser.displayName || currentUser.email,
+
                 type: "text",
+
                 text: text,
-                createdAt: serverTimestamp(),
-                likes: 0
+
+                createdAt: serverTimestamp()
+
             }
 
         );
@@ -45,18 +170,33 @@ async function sendMessage() {
 
         console.error(err);
 
+        alert("حدث خطأ أثناء إرسال الرسالة");
+
     }
+
+}
+
 // ==========================
-// رفع صورة إلى Cloudinary
+// رفع الصور
 // ==========================
 
-imageBtn.addEventListener("click", () => 
+if (imageBtn) {
 
-    imageInput.click();
+    imageBtn.addEventListener("click", () => {
 
-});
+        imageInput.click();
 
-imageInput.addEventListener("change", async () => {
+    });
+
+}
+
+if (imageInput) {
+
+    imageInput.addEventListener("change", uploadImage);
+
+}
+
+async function uploadImage() {
 
     if (!imageInput.files.length) return;
 
@@ -65,6 +205,7 @@ imageInput.addEventListener("change", async () => {
     const formData = new FormData();
 
     formData.append("file", file);
+
     formData.append("upload_preset", "ml_default");
 
     try {
@@ -89,32 +230,27 @@ imageInput.addEventListener("change", async () => {
             ),
 
             {
+
                 sender: currentUser.uid,
+
                 receiver: otherUid,
-                user: currentUser.email,
+
+                user: currentUser.displayName || currentUser.email,
+
                 type: "image",
+
                 image: data.secure_url,
-                createdAt: serverTimestamp(),
-                likes: 0
+
+                createdAt: serverTimestamp()
+
             }
 
         );
 
         imageInput.value = "";
 
-    } catch (err) {
-
-        console.error(err);
-
-        alert("فشل رفع الصورة");
-
-    }
-
-});
-    
-
-}
-// ==========================
+    } catch (err
+        // ==========================
 // تحميل الرسائل الخاصة
 // ==========================
 
@@ -158,24 +294,39 @@ function loadPrivateMessages() {
             if (data.type === "text") {
 
                 box.innerHTML = `
-                    <div class="sender">${data.user}</div>
-                    <div class="text">${data.text}</div>
+
+                    <div class="sender">
+
+                        ${data.user}
+
+                    </div>
+
+                    <div class="text">
+
+                        ${data.text}
+
+                    </div>
+
                 `;
 
-            } else if (data.type === "image") {
+            }
+
+            if (data.type === "image") {
 
                 box.innerHTML = `
-                    <div class="sender">${data.user}</div>
+
+                    <div class="sender">
+
+                        ${data.user}
+
+                    </div>
 
                     <img
                         src="${data.image}"
-                        style="
-                            max-width:220px;
-                            border-radius:12px;
-                            cursor:pointer;
-                        "
+                        class="chatImage"
                         onclick="window.open('${data.image}','_blank')"
                     >
+
                 `;
 
             }
@@ -184,36 +335,77 @@ function loadPrivateMessages() {
 
         });
 
-        messages.scrollTop = messages.scrollHeight;
+        scrollBottom();
 
     });
 
-                }
+}
+
 // ==========================
-// تشغيل المحادثة
+// النزول لآخر رسالة
 // ==========================
 
-onAuthStateChanged(auth, (user) => {
+function scrollBottom() {
 
-    if (!user) {
+    setTimeout(() => {
 
-        window.location.href = "login.html";
-        return;
+        messages.scrollTop = messages.scrollHeight;
+
+    }, 100);
+
+                                                }
+        // ==========================
+// تحديث تلقائي للنزول لآخر رسالة
+// ==========================
+
+let firstLoad = true;
+
+function autoScroll() {
+
+    if (firstLoad) {
+
+        scrollBottom();
+
+        firstLoad = false;
 
     }
 
-    currentUser = user;
+}
 
-    if (!otherUid) {
+// ==========================
+// إعادة تحميل الرسائل عند التحديث
+// ==========================
 
-        alert("لم يتم تحديد المستخدم.");
+window.addEventListener("load", () => {
 
-        window.location.href = "users.html";
+    if (messages) {
 
-        return;
+        scrollBottom();
 
     }
-
-    loadPrivateMessages();
 
 });
+
+// ==========================
+// تحديث تلقائي عند تغيير حجم الشاشة
+// ==========================
+
+window.addEventListener("resize", () => {
+
+    scrollBottom();
+
+});
+
+// ==========================
+// تنظيف اختيار الصورة بعد الإرسال
+// ==========================
+
+if (imageInput) {
+
+    imageInput.value = "";
+
+}
+
+// ==========================
+// نهاية الملف
+// ==========================
