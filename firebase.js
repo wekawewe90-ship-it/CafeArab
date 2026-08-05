@@ -9,6 +9,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-aut
 
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
 // ==========================================
 // إعدادات Firebase
 // ==========================================
@@ -43,8 +44,9 @@ const auth = getAuth(app);
 
 const db = getFirestore(app);
 
+const storage = getStorage(app);
 // ==========================================
 // Export
 // ==========================================
 
-export { auth, db };
+export { auth, db, storage };
