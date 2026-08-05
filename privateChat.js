@@ -96,36 +96,7 @@ function loadMessages() {
 
 }
 
-// =========================
-// رسم الرسالة
-// =========================
 
-function drawMessage(data) {
-
-    const msg = document.createElement("div");
-
-    msg.className =
-        data.senderId === currentUser.uid
-            ? "message me"
-            : "message other";
-
-    if (data.type === "image") {
-
-        msg.innerHTML = `
-            <img src="${data.imageUrl}"
-                 class="chat-image"
-                 loading="lazy">
-        `;
-
-    } else {
-
-        msg.textContent = data.text;
-
-    }
-
-    messagesBox.appendChild(msg);
-
-}
 
 // =========================
 // النزول لآخر رسالة
