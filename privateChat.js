@@ -60,6 +60,7 @@ onAuthStateChanged(auth, (user) => {
     roomId = getRoomId(user.uid, otherUid);
 
     startChat();
+  });
 function startChat() {
     loadMessages();
 }
@@ -437,4 +438,4 @@ window.addEventListener("error", (event) => {
 console.log("✅ privateChat.js Loaded Successfully");
     
     
-});
+
