@@ -309,9 +309,11 @@ function loadMessages() {
         });
 
         if (
-    requestAnimationFrame(() => {
+    messages.scrollTop + messages.clientHeight >=
+    messages.scrollHeight - 100
+) {
     messages.scrollTop = messages.scrollHeight;
-});
+        }
 // =====================================
 // فتح المحادثة الخاصة
 // =====================================
