@@ -314,6 +314,9 @@ function loadMessages() {
 ) {
     messages.scrollTop = messages.scrollHeight;
         }
+            });
+
+}
 // =====================================
 // فتح المحادثة الخاصة
 // =====================================
