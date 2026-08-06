@@ -303,19 +303,17 @@ function loadMessages() {
                 `;
 
             }
+messages.appendChild(box);
 
-            messages.appendChild(box);
+});
 
-        });
+setTimeout(scrollBottom, 100);
 
-        if (
+if (
     messages.scrollTop + messages.clientHeight >=
     messages.scrollHeight - 100
 ) {
     messages.scrollTop = messages.scrollHeight;
-        }
-            });
-
 }
 // =====================================
 // فتح المحادثة الخاصة
