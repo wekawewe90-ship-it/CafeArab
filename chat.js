@@ -309,15 +309,9 @@ function loadMessages() {
         });
 
         if (
-    messages.scrollTop + messages.clientHeight >=
-    messages.scrollHeight - 100
-) {
+    requestAnimationFrame(() => {
     messages.scrollTop = messages.scrollHeight;
-}
-
-    });
-
-}
+});
 // =====================================
 // فتح المحادثة الخاصة
 // =====================================
