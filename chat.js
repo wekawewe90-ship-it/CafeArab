@@ -308,13 +308,10 @@ messages.appendChild(box);
 });
 
 setTimeout(scrollBottom, 100);
+    });
 
-if (
-    messages.scrollTop + messages.clientHeight >=
-    messages.scrollHeight - 100
-) {
-    messages.scrollTop = messages.scrollHeight;
 }
+
 // =====================================
 // فتح المحادثة الخاصة
 // =====================================
