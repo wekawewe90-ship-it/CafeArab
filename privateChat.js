@@ -241,12 +241,7 @@ async function sendImage(file) {
             }
         );
 
-    } catch (err) {
-
-        console.error("Image Upload Error:", err);
-
-        alert("تعذر إرسال الصورة");
-
+    alert("خطأ الصورة: " + err.code + "\n" + err.message);
     } finally {
 
         imageBtn.disabled = false;
