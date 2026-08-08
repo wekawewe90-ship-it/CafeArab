@@ -1,6 +1,6 @@
 // =====================================
 // Cafe Arab Private Chat
-// Cloudinary + Notifications Version
+// Cloudinary + Real Name + Notifications
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -11,7 +11,9 @@ import {
     orderBy,
     onSnapshot,
     addDoc,
-    serverTimestamp
+    serverTimestamp,
+    getDoc,
+    doc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -22,35 +24,105 @@ import {
 // عناصر الصفحة
 // =====================================
 
-const messagesBox = document.getElementById("privateMessages");
-const messageInput = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
-const imageBtn = document.getElementById("imageBtn");
-const imageInput = document.getElementById("imageInput");
-const chatUser = document.getElementById("chatUser");
-const backBtn = document.getElementById("backBtn");
+const messagesBox =
+    document.getElementById("privateMessages");
+
+const messageInput =
+    document.getElementById("messageInput");
+
+const sendBtn =
+    document.getElementById("sendBtn");
+
+const imageBtn =
+    document.getElementById("imageBtn");
+
+const imageInput =
+    document.getElementById("imageInput");
+
+const chatUser =
+    document.getElementById("chatUser");
+
+const backBtn =
+    document.getElementById("backBtn");
 
 // =====================================
 // متغيرات
 // =====================================
 
 let currentUser = null;
+
+let currentUserName = "مستخدم";
+
 let roomId = "";
+
 let otherUid = "";
-let otherName = "";
+
+let otherName = "مستخدم";
+
 let unsubscribe = null;
 
 // =====================================
 // بيانات المستخدم الآخر
 // =====================================
 
-const params = new URLSearchParams(location.search);
+const params =
+    new URLSearchParams(location.search);
 
-otherUid = params.get("uid");
-otherName = params.get("name") || "مستخدم";
+otherUid =
+    params.get("uid");
+
+otherName =
+    params.get("name") || "مستخدم";
 
 if (chatUser) {
-    chatUser.textContent = "👤 " + otherName;
+
+    chatUser.textContent =
+        "👤 " + otherName;
+
+}
+
+// =====================================
+// الحصول على الاسم الحقيقي
+// =====================================
+
+async function getRealUserName(uid) {
+
+    if (!uid) {
+        return "مستخدم";
+    }
+
+    try {
+
+        const userRef =
+            doc(db, "users", uid);
+
+        const userSnap =
+            await getDoc(userRef);
+
+        if (userSnap.exists()) {
+
+            const data =
+                userSnap.data();
+
+            return (
+                data.name ||
+                data.username ||
+                "مستخدم"
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Get User Name Error:",
+            error
+        );
+
+    }
+
+    return "مستخدم";
+
 }
 
 // =====================================
@@ -60,7 +132,9 @@ if (chatUser) {
 if (backBtn) {
 
     backBtn.onclick = () => {
+
         history.back();
+
     };
 
 }
@@ -71,7 +145,12 @@ if (backBtn) {
 
 function getRoomId(uid1, uid2) {
 
-    return [uid1, uid2].sort().join("_");
+    return [
+        uid1,
+        uid2
+    ]
+    .sort()
+    .join("_");
 
 }
 
@@ -79,32 +158,47 @@ function getRoomId(uid1, uid2) {
 // تسجيل الدخول
 // =====================================
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(
+    auth,
+    async (user) => {
 
-    if (!user) {
+        if (!user) {
 
-        location.href = "login.html";
-        return;
+            location.href =
+                "login.html";
+
+            return;
+
+        }
+
+        currentUser = user;
+
+        // الحصول على الاسم الحقيقي
+        currentUserName =
+            await getRealUserName(
+                user.uid
+            );
+
+        if (!otherUid) {
+
+            alert(
+                "لم يتم تحديد المستخدم."
+            );
+
+            return;
+
+        }
+
+        roomId =
+            getRoomId(
+                currentUser.uid,
+                otherUid
+            );
+
+        startChat();
 
     }
-
-    currentUser = user;
-
-    if (!otherUid) {
-
-        alert("لم يتم تحديد المستخدم.");
-        return;
-
-    }
-
-    roomId = getRoomId(
-        currentUser.uid,
-        otherUid
-    );
-
-    startChat();
-
-});
+);
 
 // =====================================
 // تشغيل المحادثة
@@ -122,46 +216,63 @@ function startChat() {
 
 function loadMessages() {
 
-    const messagesRef = collection(
-        db,
-        "privateChats",
-        roomId,
-        "messages"
-    );
-
-    const q = query(
-        messagesRef,
-        orderBy("createdAt", "asc")
-    );
-
-    if (unsubscribe) {
-        unsubscribe();
+    if (!messagesBox) {
+        return;
     }
 
-    unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
+    const messagesRef =
+        collection(
+            db,
+            "privateChats",
+            roomId,
+            "messages"
+        );
 
-            messagesBox.innerHTML = "";
+    const q =
+        query(
+            messagesRef,
+            orderBy(
+                "createdAt",
+                "asc"
+            )
+        );
 
-            snapshot.forEach((doc) => {
+    if (unsubscribe) {
 
-                drawMessage(doc.data());
+        unsubscribe();
 
-            });
+    }
 
-            scrollBottom();
+    unsubscribe =
+        onSnapshot(
+            q,
+            (snapshot) => {
 
-        },
-        (error) => {
+                messagesBox.innerHTML =
+                    "";
 
-            console.error(
-                "Load Private Messages Error:",
-                error
-            );
+                snapshot.forEach(
+                    (messageDoc) => {
 
-        }
-    );
+                        drawMessage(
+                            messageDoc.data()
+                        );
+
+                    }
+                );
+
+                scrollBottom();
+
+            },
+            (error) => {
+
+                console.error(
+                    "Load Private Messages Error:",
+                    error
+                );
+
+            }
+        );
 
 }
 
@@ -171,14 +282,19 @@ function loadMessages() {
 
 function scrollBottom() {
 
-    if (!messagesBox) return;
+    if (!messagesBox) {
+        return;
+    }
 
-    setTimeout(() => {
+    setTimeout(
+        () => {
 
-        messagesBox.scrollTop =
-            messagesBox.scrollHeight;
+            messagesBox.scrollTop =
+                messagesBox.scrollHeight;
 
-    }, 100);
+        },
+        100
+    );
 
 }
 
@@ -188,16 +304,21 @@ function scrollBottom() {
 
 function formatTime(timestamp) {
 
-    if (!timestamp) return "";
+    if (!timestamp) {
+        return "";
+    }
 
     try {
 
         return timestamp
             .toDate()
-            .toLocaleTimeString("ar-EG", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
+            .toLocaleTimeString(
+                "ar-EG",
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
 
     } catch (error) {
 
@@ -217,14 +338,16 @@ function drawMessage(data) {
         document.createElement("div");
 
     wrapper.className =
-        data.senderId === currentUser.uid
+        data.senderId ===
+        currentUser.uid
             ? "message me"
             : "message other";
 
     const bubble =
         document.createElement("div");
 
-    bubble.className = "bubble";
+    bubble.className =
+        "bubble";
 
     // =================================
     // صورة
@@ -238,13 +361,17 @@ function drawMessage(data) {
         const img =
             document.createElement("img");
 
-        img.src = data.imageUrl;
+        img.src =
+            data.imageUrl;
 
-        img.className = "chat-image";
+        img.className =
+            "chat-image";
 
-        img.loading = "lazy";
+        img.loading =
+            "lazy";
 
-        img.alt = "صورة";
+        img.alt =
+            "صورة";
 
         img.addEventListener(
             "click",
@@ -273,36 +400,52 @@ function drawMessage(data) {
 
     }
 
-    wrapper.appendChild(bubble);
+    wrapper.appendChild(
+        bubble
+    );
 
     // =================================
     // الوقت
     // =================================
 
     const time =
-        document.createElement("small");
+        document.createElement(
+            "small"
+        );
 
     time.className =
         "message-time";
 
     time.textContent =
-        formatTime(data.createdAt);
+        formatTime(
+            data.createdAt
+        );
 
-    wrapper.appendChild(time);
+    wrapper.appendChild(
+        time
+    );
 
-    messagesBox.appendChild(wrapper);
+    messagesBox.appendChild(
+        wrapper
+    );
 
 }
 
 // =====================================
-// إنشاء إشعار للمستخدم الآخر
+// إنشاء الإشعار
 // =====================================
 
-async function createNotification(text) {
+async function createNotification(
+    notificationText
+) {
 
-    if (!otherUid) return;
+    if (!currentUser) {
+        return;
+    }
 
-    if (!currentUser) return;
+    if (!otherUid) {
+        return;
+    }
 
     try {
 
@@ -319,12 +462,13 @@ async function createNotification(text) {
                     currentUser.uid,
 
                 fromName:
-                    currentUser.displayName ||
-                    "مستخدم",
+                    currentUserName,
 
-                text: text,
+                text:
+                    notificationText,
 
-                read: false,
+                read:
+                    false,
 
                 createdAt:
                     serverTimestamp()
@@ -332,10 +476,14 @@ async function createNotification(text) {
             }
         );
 
+        console.log(
+            "✅ Notification Created"
+        );
+
     } catch (error) {
 
         console.error(
-            "Create Notification Error:",
+            "❌ Notification Create Error:",
             error
         );
 
@@ -349,20 +497,33 @@ async function createNotification(text) {
 
 async function sendMessage() {
 
-    if (!currentUser) return;
+    if (!currentUser) {
+        return;
+    }
 
-    if (!messageInput) return;
+    if (!messageInput) {
+        return;
+    }
 
     const text =
         messageInput.value.trim();
 
-    if (!text) return;
+    if (!text) {
+        return;
+    }
 
     try {
 
         if (sendBtn) {
-            sendBtn.disabled = true;
+
+            sendBtn.disabled =
+                true;
+
         }
+
+        // =================================
+        // حفظ الرسالة
+        // =================================
 
         await addDoc(
             collection(
@@ -380,8 +541,7 @@ async function sendMessage() {
                     otherUid,
 
                 senderName:
-                    currentUser.displayName ||
-                    "مستخدم",
+                    currentUserName,
 
                 text:
                     text,
@@ -399,9 +559,13 @@ async function sendMessage() {
         // إنشاء الإشعار
         // =================================
 
-        await createNotification(text);
+        await createNotification(
+            "💬 " + currentUserName +
+            ": " + text
+        );
 
-        messageInput.value = "";
+        messageInput.value =
+            "";
 
         messageInput.focus();
 
@@ -419,7 +583,10 @@ async function sendMessage() {
     } finally {
 
         if (sendBtn) {
-            sendBtn.disabled = false;
+
+            sendBtn.disabled =
+                false;
+
         }
 
     }
@@ -475,7 +642,8 @@ if (
     sendBtn
 ) {
 
-    sendBtn.disabled = true;
+    sendBtn.disabled =
+        true;
 
     messageInput.addEventListener(
         "input",
@@ -497,20 +665,25 @@ if (
 
 async function sendImage(file) {
 
-    if (!file) return;
+    if (!file) {
+        return;
+    }
 
-    if (!currentUser) return;
+    if (!currentUser) {
+        return;
+    }
 
     try {
 
         if (imageBtn) {
 
-            imageBtn.disabled = true;
+            imageBtn.disabled =
+                true;
 
         }
 
         // =================================
-        // تجهيز Cloudinary
+        // Cloudinary
         // =================================
 
         const formData =
@@ -560,7 +733,7 @@ async function sendImage(file) {
         }
 
         // =================================
-        // حفظ رسالة الصورة
+        // حفظ الصورة في الرسائل
         // =================================
 
         await addDoc(
@@ -579,8 +752,7 @@ async function sendImage(file) {
                     otherUid,
 
                 senderName:
-                    currentUser.displayName ||
-                    "مستخدم",
+                    currentUserName,
 
                 type:
                     "image",
@@ -595,11 +767,13 @@ async function sendImage(file) {
         );
 
         // =================================
-        // إنشاء إشعار للصورة
+        // إشعار الصورة
         // =================================
 
         await createNotification(
-            "📷 أرسل لك صورة"
+            "📷 " +
+            currentUserName +
+            " أرسل لك صورة"
         );
 
     } catch (error) {
@@ -618,13 +792,15 @@ async function sendImage(file) {
 
         if (imageBtn) {
 
-            imageBtn.disabled = false;
+            imageBtn.disabled =
+                false;
 
         }
 
         if (imageInput) {
 
-            imageInput.value = "";
+            imageInput.value =
+                "";
 
         }
 
@@ -666,7 +842,9 @@ if (imageInput) {
             const file =
                 event.target.files[0];
 
-            if (!file) return;
+            if (!file) {
+                return;
+            }
 
             if (
                 !file.type.startsWith(
@@ -678,7 +856,8 @@ if (imageInput) {
                     "الرجاء اختيار صورة فقط."
                 );
 
-                imageInput.value = "";
+                imageInput.value =
+                    "";
 
                 return;
 
