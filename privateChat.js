@@ -1,6 +1,6 @@
 // =====================================
 // Cafe Arab Private Chat
-// Cloudinary Image Version
+// Cloudinary + Notifications Version
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -93,7 +93,6 @@ onAuthStateChanged(auth, (user) => {
     if (!otherUid) {
 
         alert("لم يتم تحديد المستخدم.");
-
         return;
 
     }
@@ -136,9 +135,7 @@ function loadMessages() {
     );
 
     if (unsubscribe) {
-
         unsubscribe();
-
     }
 
     unsubscribe = onSnapshot(
@@ -298,6 +295,55 @@ function drawMessage(data) {
 }
 
 // =====================================
+// إنشاء إشعار للمستخدم الآخر
+// =====================================
+
+async function createNotification(text) {
+
+    if (!otherUid) return;
+
+    if (!currentUser) return;
+
+    try {
+
+        await addDoc(
+            collection(
+                db,
+                "notifications",
+                otherUid,
+                "items"
+            ),
+            {
+
+                fromUid:
+                    currentUser.uid,
+
+                fromName:
+                    currentUser.displayName ||
+                    "مستخدم",
+
+                text: text,
+
+                read: false,
+
+                createdAt:
+                    serverTimestamp()
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Create Notification Error:",
+            error
+        );
+
+    }
+
+}
+
+// =====================================
 // إرسال رسالة نصية
 // =====================================
 
@@ -326,6 +372,7 @@ async function sendMessage() {
                 "messages"
             ),
             {
+
                 senderId:
                     currentUser.uid,
 
@@ -336,14 +383,23 @@ async function sendMessage() {
                     currentUser.displayName ||
                     "مستخدم",
 
-                text: text,
+                text:
+                    text,
 
-                type: "text",
+                type:
+                    "text",
 
                 createdAt:
                     serverTimestamp()
+
             }
         );
+
+        // =================================
+        // إنشاء الإشعار
+        // =================================
+
+        await createNotification(text);
 
         messageInput.value = "";
 
@@ -455,7 +511,6 @@ async function sendImage(file) {
 
         // =================================
         // تجهيز Cloudinary
-        // نفس إعدادات الشات العام
         // =================================
 
         const formData =
@@ -505,7 +560,7 @@ async function sendImage(file) {
         }
 
         // =================================
-        // حفظ رسالة الصورة في Firestore
+        // حفظ رسالة الصورة
         // =================================
 
         await addDoc(
@@ -516,6 +571,7 @@ async function sendImage(file) {
                 "messages"
             ),
             {
+
                 senderId:
                     currentUser.uid,
 
@@ -526,14 +582,24 @@ async function sendImage(file) {
                     currentUser.displayName ||
                     "مستخدم",
 
-                type: "image",
+                type:
+                    "image",
 
                 imageUrl:
                     data.secure_url,
 
                 createdAt:
                     serverTimestamp()
+
             }
+        );
+
+        // =================================
+        // إنشاء إشعار للصورة
+        // =================================
+
+        await createNotification(
+            "📷 أرسل لك صورة"
         );
 
     } catch (error) {
@@ -602,7 +668,6 @@ if (imageInput) {
 
             if (!file) return;
 
-            // التأكد أنها صورة
             if (
                 !file.type.startsWith(
                     "image/"
