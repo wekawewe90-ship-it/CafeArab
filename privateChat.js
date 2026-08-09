@@ -1,6 +1,7 @@
 // =====================================
 // Cafe Arab Private Chat
 // Cloudinary + Real Name + Notifications
+// + Online / Offline
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -61,8 +62,10 @@ let otherName = "مستخدم";
 
 let unsubscribe = null;
 
+let unsubscribeOtherUser = null;
+
 // =====================================
-// بيانات المستخدم الآخر
+// بيانات المستخدم الآخر من الرابط
 // =====================================
 
 const params =
@@ -74,10 +77,173 @@ otherUid =
 otherName =
     params.get("name") || "مستخدم";
 
+// =====================================
+// عرض الاسم
+// =====================================
+
 if (chatUser) {
 
     chatUser.textContent =
         "👤 " + otherName;
+
+}
+
+// =====================================
+// إنشاء مكان للحالة تحت الاسم
+// =====================================
+
+let statusElement = null;
+
+function createStatusElement() {
+
+    if (!chatUser) return;
+
+    if (statusElement) return;
+
+    statusElement =
+        document.createElement("div");
+
+    statusElement.id =
+        "privateUserStatus";
+
+    statusElement.style.fontSize =
+        "13px";
+
+    statusElement.style.marginTop =
+        "4px";
+
+    statusElement.style.fontWeight =
+        "normal";
+
+    statusElement.style.opacity =
+        "0.85";
+
+    chatUser.parentNode.appendChild(
+        statusElement
+    );
+
+}
+
+// =====================================
+// تنسيق آخر ظهور
+// =====================================
+
+function formatLastSeen(timestamp) {
+
+    if (!timestamp) {
+
+        return "آخر ظهور غير معروف";
+
+    }
+
+    try {
+
+        const date =
+            timestamp.toDate();
+
+        return (
+            "⚪ غير متصل — آخر ظهور " +
+            date.toLocaleTimeString(
+                "ar-EG",
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            )
+        );
+
+    } catch (error) {
+
+        return "⚪ غير متصل";
+
+    }
+
+}
+
+// =====================================
+// تحديث حالة المستخدم الآخر
+// =====================================
+
+function updateOtherUserStatus(data) {
+
+    if (!statusElement) return;
+
+    if (data.online === true) {
+
+        statusElement.textContent =
+            "🟢 متصل الآن";
+
+    } else {
+
+        statusElement.textContent =
+            formatLastSeen(
+                data.lastSeen
+            );
+
+    }
+
+}
+
+// =====================================
+// مراقبة حالة المستخدم الآخر
+// =====================================
+
+function watchOtherUserStatus() {
+
+    if (!otherUid) return;
+
+    const otherUserRef =
+        doc(
+            db,
+            "users",
+            otherUid
+        );
+
+    if (unsubscribeOtherUser) {
+
+        unsubscribeOtherUser();
+
+    }
+
+    unsubscribeOtherUser =
+        onSnapshot(
+            otherUserRef,
+            (snapshot) => {
+
+                if (!snapshot.exists()) {
+
+                    if (statusElement) {
+
+                        statusElement.textContent =
+                            "⚪ غير متصل";
+
+                    }
+
+                    return;
+
+                }
+
+                updateOtherUserStatus(
+                    snapshot.data()
+                );
+
+            },
+            (error) => {
+
+                console.error(
+                    "User Status Error:",
+                    error
+                );
+
+                if (statusElement) {
+
+                    statusElement.textContent =
+                        "";
+
+                }
+
+            }
+        );
 
 }
 
@@ -88,16 +254,24 @@ if (chatUser) {
 async function getRealUserName(uid) {
 
     if (!uid) {
+
         return "مستخدم";
+
     }
 
     try {
 
         const userRef =
-            doc(db, "users", uid);
+            doc(
+                db,
+                "users",
+                uid
+            );
 
         const userSnap =
-            await getDoc(userRef);
+            await getDoc(
+                userRef
+            );
 
         if (userSnap.exists()) {
 
@@ -149,8 +323,8 @@ function getRoomId(uid1, uid2) {
         uid1,
         uid2
     ]
-    .sort()
-    .join("_");
+        .sort()
+        .join("_");
 
 }
 
@@ -173,7 +347,6 @@ onAuthStateChanged(
 
         currentUser = user;
 
-        // الحصول على الاسم الحقيقي
         currentUserName =
             await getRealUserName(
                 user.uid
@@ -194,6 +367,10 @@ onAuthStateChanged(
                 currentUser.uid,
                 otherUid
             );
+
+        createStatusElement();
+
+        watchOtherUserStatus();
 
         startChat();
 
@@ -216,9 +393,7 @@ function startChat() {
 
 function loadMessages() {
 
-    if (!messagesBox) {
-        return;
-    }
+    if (!messagesBox) return;
 
     const messagesRef =
         collection(
@@ -282,9 +457,7 @@ function loadMessages() {
 
 function scrollBottom() {
 
-    if (!messagesBox) {
-        return;
-    }
+    if (!messagesBox) return;
 
     setTimeout(
         () => {
@@ -304,9 +477,7 @@ function scrollBottom() {
 
 function formatTime(timestamp) {
 
-    if (!timestamp) {
-        return "";
-    }
+    if (!timestamp) return "";
 
     try {
 
@@ -385,7 +556,9 @@ function drawMessage(data) {
             }
         );
 
-        bubble.appendChild(img);
+        bubble.appendChild(
+            img
+        );
 
     }
 
@@ -439,13 +612,9 @@ async function createNotification(
     notificationText
 ) {
 
-    if (!currentUser) {
-        return;
-    }
+    if (!currentUser) return;
 
-    if (!otherUid) {
-        return;
-    }
+    if (!otherUid) return;
 
     try {
 
@@ -497,20 +666,14 @@ async function createNotification(
 
 async function sendMessage() {
 
-    if (!currentUser) {
-        return;
-    }
+    if (!currentUser) return;
 
-    if (!messageInput) {
-        return;
-    }
+    if (!messageInput) return;
 
     const text =
         messageInput.value.trim();
 
-    if (!text) {
-        return;
-    }
+    if (!text) return;
 
     try {
 
@@ -520,10 +683,6 @@ async function sendMessage() {
                 true;
 
         }
-
-        // =================================
-        // حفظ الرسالة
-        // =================================
 
         await addDoc(
             collection(
@@ -555,13 +714,11 @@ async function sendMessage() {
             }
         );
 
-        // =================================
-        // إنشاء الإشعار
-        // =================================
-
         await createNotification(
-            "💬 " + currentUserName +
-            ": " + text
+            "💬 " +
+            currentUserName +
+            ": " +
+            text
         );
 
         messageInput.value =
@@ -608,7 +765,6 @@ if (sendBtn) {
 
 // =====================================
 // Enter للإرسال
-// Shift + Enter سطر جديد
 // =====================================
 
 if (messageInput) {
@@ -665,13 +821,9 @@ if (
 
 async function sendImage(file) {
 
-    if (!file) {
-        return;
-    }
+    if (!file) return;
 
-    if (!currentUser) {
-        return;
-    }
+    if (!currentUser) return;
 
     try {
 
@@ -681,10 +833,6 @@ async function sendImage(file) {
                 true;
 
         }
-
-        // =================================
-        // Cloudinary
-        // =================================
 
         const formData =
             new FormData();
@@ -698,10 +846,6 @@ async function sendImage(file) {
             "upload_preset",
             "ml_default"
         );
-
-        // =================================
-        // رفع الصورة
-        // =================================
 
         const response =
             await fetch(
@@ -732,10 +876,6 @@ async function sendImage(file) {
 
         }
 
-        // =================================
-        // حفظ الصورة في الرسائل
-        // =================================
-
         await addDoc(
             collection(
                 db,
@@ -765,10 +905,6 @@ async function sendImage(file) {
 
             }
         );
-
-        // =================================
-        // إشعار الصورة
-        // =================================
 
         await createNotification(
             "📷 " +
@@ -842,9 +978,7 @@ if (imageInput) {
             const file =
                 event.target.files[0];
 
-            if (!file) {
-                return;
-            }
+            if (!file) return;
 
             if (
                 !file.type.startsWith(
@@ -881,6 +1015,12 @@ window.addEventListener(
         if (unsubscribe) {
 
             unsubscribe();
+
+        }
+
+        if (unsubscribeOtherUser) {
+
+            unsubscribeOtherUser();
 
         }
 
