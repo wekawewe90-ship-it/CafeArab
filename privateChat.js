@@ -2,6 +2,7 @@
 // Cafe Arab Private Chat
 // Cloudinary + Real Name + Notifications
 // + Online / Offline
+// + Message Read Status
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -14,7 +15,8 @@ import {
     addDoc,
     serverTimestamp,
     getDoc,
-    doc
+    doc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -421,22 +423,46 @@ function loadMessages() {
     unsubscribe =
         onSnapshot(
             q,
-            (snapshot) => {
+            async (snapshot) => {
 
                 messagesBox.innerHTML =
                     "";
 
+                const unreadMessages = [];
+
                 snapshot.forEach(
                     (messageDoc) => {
 
+                        const data =
+                            messageDoc.data();
+
                         drawMessage(
-                            messageDoc.data()
+                            data
                         );
+
+                        // الرسائل التي أرسلها الطرف الآخر
+                        // ولم تتم قراءتها بعد
+                        if (
+                            data.senderId ===
+                                otherUid &&
+                            data.read !== true
+                        ) {
+
+                            unreadMessages.push(
+                                messageDoc.id
+                            );
+
+                        }
 
                     }
                 );
 
                 scrollBottom();
+
+                // تحويل الرسائل إلى مقروءة
+                await markMessagesAsRead(
+                    unreadMessages
+                );
 
             },
             (error) => {
@@ -452,619 +478,40 @@ function loadMessages() {
 }
 
 // =====================================
-// النزول لآخر رسالة
+// تحويل الرسائل إلى مقروءة
 // =====================================
 
-function scrollBottom() {
+async function markMessagesAsRead(
+    messageIds
+) {
 
-    if (!messagesBox) return;
-
-    setTimeout(
-        () => {
-
-            messagesBox.scrollTop =
-                messagesBox.scrollHeight;
-
-        },
-        100
-    );
-
-}
-
-// =====================================
-// تنسيق الوقت
-// =====================================
-
-function formatTime(timestamp) {
-
-    if (!timestamp) return "";
+    if (!messageIds.length) {
+        return;
+    }
 
     try {
 
-        return timestamp
-            .toDate()
-            .toLocaleTimeString(
-                "ar-EG",
+        for (
+            const messageId
+            of messageIds
+        ) {
+
+            const messageRef =
+                doc(
+                    db,
+                    "privateChats",
+                    roomId,
+                    "messages",
+                    messageId
+                );
+
+            await updateDoc(
+                messageRef,
                 {
-                    hour: "2-digit",
-                    minute: "2-digit"
+                    read: true
                 }
             );
 
-    } catch (error) {
-
-        return "";
-
-    }
-
-}
-
-// =====================================
-// رسم الرسالة
-// =====================================
-
-function drawMessage(data) {
-
-    const wrapper =
-        document.createElement("div");
-
-    wrapper.className =
-        data.senderId ===
-        currentUser.uid
-            ? "message me"
-            : "message other";
-
-    const bubble =
-        document.createElement("div");
-
-    bubble.className =
-        "bubble";
-
-    // =================================
-    // صورة
-    // =================================
-
-    if (
-        data.type === "image" &&
-        data.imageUrl
-    ) {
-
-        const img =
-            document.createElement("img");
-
-        img.src =
-            data.imageUrl;
-
-        img.className =
-            "chat-image";
-
-        img.loading =
-            "lazy";
-
-        img.alt =
-            "صورة";
-
-        img.addEventListener(
-            "click",
-            () => {
-
-                window.open(
-                    data.imageUrl,
-                    "_blank"
-                );
-
-            }
-        );
-
-        bubble.appendChild(
-            img
-        );
-
-    }
-
-    // =================================
-    // نص
-    // =================================
-
-    else {
-
-        bubble.textContent =
-            data.text || "";
-
-    }
-
-    wrapper.appendChild(
-        bubble
-    );
-
-    // =================================
-    // الوقت
-    // =================================
-
-    const time =
-        document.createElement(
-            "small"
-        );
-
-    time.className =
-        "message-time";
-
-    time.textContent =
-        formatTime(
-            data.createdAt
-        );
-
-    wrapper.appendChild(
-        time
-    );
-
-    messagesBox.appendChild(
-        wrapper
-    );
-
-}
-
-// =====================================
-// إنشاء الإشعار
-// =====================================
-
-async function createNotification(
-    notificationText
-) {
-
-    if (!currentUser) return;
-
-    if (!otherUid) return;
-
-    try {
-
-        await addDoc(
-            collection(
-                db,
-                "notifications",
-                otherUid,
-                "items"
-            ),
-            {
-
-                fromUid:
-                    currentUser.uid,
-
-                fromName:
-                    currentUserName,
-
-                text:
-                    notificationText,
-
-                read:
-                    false,
-
-                createdAt:
-                    serverTimestamp()
-
-            }
-        );
-
-        console.log(
-            "✅ Notification Created"
-        );
-
-    } catch (error) {
-
-        console.error(
-            "❌ Notification Create Error:",
-            error
-        );
-
-    }
-
-}
-
-// =====================================
-// إرسال رسالة نصية
-// =====================================
-
-async function sendMessage() {
-
-    if (!currentUser) return;
-
-    if (!messageInput) return;
-
-    const text =
-        messageInput.value.trim();
-
-    if (!text) return;
-
-    try {
-
-        if (sendBtn) {
-
-            sendBtn.disabled =
-                true;
-
         }
 
-        await addDoc(
-            collection(
-                db,
-                "privateChats",
-                roomId,
-                "messages"
-            ),
-            {
-
-                senderId:
-                    currentUser.uid,
-
-                receiverId:
-                    otherUid,
-
-                senderName:
-                    currentUserName,
-
-                text:
-                    text,
-
-                type:
-                    "text",
-
-                createdAt:
-                    serverTimestamp()
-
-            }
-        );
-
-        await createNotification(
-            "💬 " +
-            currentUserName +
-            ": " +
-            text
-        );
-
-        messageInput.value =
-            "";
-
-        messageInput.focus();
-
-    } catch (error) {
-
-        console.error(
-            "Send Message Error:",
-            error
-        );
-
-        alert(
-            "حدث خطأ أثناء إرسال الرسالة."
-        );
-
-    } finally {
-
-        if (sendBtn) {
-
-            sendBtn.disabled =
-                false;
-
-        }
-
-    }
-
-}
-
-// =====================================
-// زر إرسال الرسالة
-// =====================================
-
-if (sendBtn) {
-
-    sendBtn.addEventListener(
-        "click",
-        sendMessage
-    );
-
-}
-
-// =====================================
-// Enter للإرسال
-// =====================================
-
-if (messageInput) {
-
-    messageInput.addEventListener(
-        "keydown",
-        (e) => {
-
-            if (
-                e.key === "Enter" &&
-                !e.shiftKey
-            ) {
-
-                e.preventDefault();
-
-                sendMessage();
-
-            }
-
-        }
-    );
-
-}
-
-// =====================================
-// حالة زر الإرسال
-// =====================================
-
-if (
-    messageInput &&
-    sendBtn
-) {
-
-    sendBtn.disabled =
-        true;
-
-    messageInput.addEventListener(
-        "input",
-        () => {
-
-            sendBtn.disabled =
-                messageInput.value
-                    .trim()
-                    .length === 0;
-
-        }
-    );
-
-}
-
-// =====================================
-// رفع صورة إلى Cloudinary
-// =====================================
-
-async function sendImage(file) {
-
-    if (!file) return;
-
-    if (!currentUser) return;
-
-    try {
-
-        if (imageBtn) {
-
-            imageBtn.disabled =
-                true;
-
-        }
-
-        const formData =
-            new FormData();
-
-        formData.append(
-            "file",
-            file
-        );
-
-        formData.append(
-            "upload_preset",
-            "ml_default"
-        );
-
-        const response =
-            await fetch(
-                "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Cloudinary Upload Failed: " +
-                response.status
-            );
-
-        }
-
-        const data =
-            await response.json();
-
-        if (!data.secure_url) {
-
-            throw new Error(
-                "لم يتم الحصول على رابط الصورة."
-            );
-
-        }
-
-        await addDoc(
-            collection(
-                db,
-                "privateChats",
-                roomId,
-                "messages"
-            ),
-            {
-
-                senderId:
-                    currentUser.uid,
-
-                receiverId:
-                    otherUid,
-
-                senderName:
-                    currentUserName,
-
-                type:
-                    "image",
-
-                imageUrl:
-                    data.secure_url,
-
-                createdAt:
-                    serverTimestamp()
-
-            }
-        );
-
-        await createNotification(
-            "📷 " +
-            currentUserName +
-            " أرسل لك صورة"
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Private Image Error:",
-            error
-        );
-
-        alert(
-            "فشل إرسال الصورة:\n" +
-            error.message
-        );
-
-    } finally {
-
-        if (imageBtn) {
-
-            imageBtn.disabled =
-                false;
-
-        }
-
-        if (imageInput) {
-
-            imageInput.value =
-                "";
-
-        }
-
-    }
-
-}
-
-// =====================================
-// زر اختيار الصورة
-// =====================================
-
-if (imageBtn) {
-
-    imageBtn.addEventListener(
-        "click",
-        () => {
-
-            if (imageInput) {
-
-                imageInput.click();
-
-            }
-
-        }
-    );
-
-}
-
-// =====================================
-// اختيار الصورة
-// =====================================
-
-if (imageInput) {
-
-    imageInput.addEventListener(
-        "change",
-        (event) => {
-
-            const file =
-                event.target.files[0];
-
-            if (!file) return;
-
-            if (
-                !file.type.startsWith(
-                    "image/"
-                )
-            ) {
-
-                alert(
-                    "الرجاء اختيار صورة فقط."
-                );
-
-                imageInput.value =
-                    "";
-
-                return;
-
-            }
-
-            sendImage(file);
-
-        }
-    );
-
-}
-
-// =====================================
-// تنظيف Listener
-// =====================================
-
-window.addEventListener(
-    "beforeunload",
-    () => {
-
-        if (unsubscribe) {
-
-            unsubscribe();
-
-        }
-
-        if (unsubscribeOtherUser) {
-
-            unsubscribeOtherUser();
-
-        }
-
-    }
-);
-
-// =====================================
-// التركيز على الكتابة
-// =====================================
-
-window.addEventListener(
-    "load",
-    () => {
-
-        if (messageInput) {
-
-            messageInput.focus();
-
-        }
-
-    }
-);
-
-// =====================================
-// معالجة الأخطاء العامة
-// =====================================
-
-window.addEventListener(
-    "error",
-    (event) => {
-
-        console.error(
-            "Private Chat Error:",
-            event.error ||
-            event.message
-        );
-
-    }
-);
-
-// =====================================
-// نهاية الملف
-// =====================================
-
-console.log(
-    "✅ privateChat.js Loaded Successfully"
-);
+    } catch (error 
