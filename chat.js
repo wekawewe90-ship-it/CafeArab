@@ -1,9 +1,6 @@
 // =====================================
 // Cafe Arab Chat V3
 // Registered Users + Guest Users
-// Firebase Anonymous Auth for Guests
-// Cloudinary Images
-// Private Chat Support
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -14,9 +11,7 @@ import {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp,
-    doc,
-    getDoc
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -71,7 +66,7 @@ let messagesUnsubscribe = null;
 
 
 // =====================================
-// بيانات الضيف من sessionStorage
+// الحصول على بيانات الضيف
 // =====================================
 
 function getGuestData() {
@@ -84,9 +79,7 @@ function getGuestData() {
             );
 
         if (!raw) {
-
             return null;
-
         }
 
         const data =
@@ -97,9 +90,7 @@ function getGuestData() {
             data.isGuest !== true ||
             !data.name
         ) {
-
             return null;
-
         }
 
         return data;
@@ -107,14 +98,12 @@ function getGuestData() {
     } catch (error) {
 
         console.error(
-            "Guest Data Error:",
+            "Guest data error:",
             error
         );
 
         return null;
-
     }
-
 }
 
 
@@ -124,83 +113,17 @@ function getGuestData() {
 
 function updateUserName() {
 
-    if (!userName) return;
-
-    if (isGuest) {
-
-        userName.textContent =
-            "👤 " + currentUserName;
-
+    if (!userName) {
         return;
-
     }
 
     userName.textContent =
         "👤 " + currentUserName;
-
 }
 
 
 // =====================================
-// جلب بيانات المستخدم المسجل
-// =====================================
-
-async function loadRegisteredUserData(
-    uid,
-    firebaseUser
-) {
-
-    currentUserName =
-        firebaseUser.displayName ||
-        firebaseUser.email ||
-        "مستخدم";
-
-    try {
-
-        const userRef =
-            doc(
-                db,
-                "users",
-                uid
-            );
-
-        const userSnap =
-            await getDoc(
-                userRef
-            );
-
-        if (userSnap.exists()) {
-
-            const data =
-                userSnap.data();
-
-            currentUserName =
-                data.name ||
-                data.username ||
-                firebaseUser.displayName ||
-                firebaseUser.email ||
-                "مستخدم";
-
-            currentUserCountry =
-                data.country ||
-                "";
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Load User Data Error:",
-            error
-        );
-
-    }
-
-}
-
-
-// =====================================
-// التحقق من المستخدم
+// التحقق من تسجيل الدخول
 // =====================================
 
 onAuthStateChanged(
@@ -208,7 +131,7 @@ onAuthStateChanged(
     async (user) => {
 
         // =================================
-        // لو مفيش مستخدم
+        // لا يوجد مستخدم Firebase
         // =================================
 
         if (!user) {
@@ -217,16 +140,12 @@ onAuthStateChanged(
                 getGuestData();
 
             // =============================
-            // يوجد ضيف
+            // يوجد بيانات ضيف
             // =============================
 
             if (guestData) {
 
                 try {
-
-                    console.log(
-                        "👤 Guest detected - signing in anonymously..."
-                    );
 
                     await signInAnonymously(
                         auth
@@ -237,35 +156,32 @@ onAuthStateChanged(
                 } catch (error) {
 
                     console.error(
-                        "Anonymous Login Error:",
+                        "Anonymous login error:",
                         error
                     );
 
                     alert(
-                        "❌ تعذر دخول الضيف.\n\n" +
-                        "تأكد أن Anonymous Authentication مفعلة في Firebase."
+                        "تعذر دخول الضيف. تأكد أن Anonymous Authentication مفعلة في Firebase."
                     );
 
                     return;
-
                 }
-
             }
 
+
             // =============================
-            // لا يوجد ضيف ولا عضو
+            // لا ضيف ولا عضو
             // =============================
 
-            location.href =
+            window.location.href =
                 "login.html";
 
             return;
-
         }
 
 
         // =================================
-        // عندنا مستخدم Firebase
+        // حفظ المستخدم الحالي
         // =================================
 
         currentUser =
@@ -273,7 +189,7 @@ onAuthStateChanged(
 
 
         // =================================
-        // تحديد هل هو ضيف
+        // هل هو ضيف؟
         // =================================
 
         isGuest =
@@ -291,24 +207,16 @@ onAuthStateChanged(
 
             if (!guestData) {
 
-                // مستخدم Anonymous بدون بيانات ضيف
-                // نخرجه من الشات
-
                 try {
-
                     await signOut(auth);
-
                 } catch (error) {
-
                     console.error(error);
-
                 }
 
-                location.href =
+                window.location.href =
                     "login.html";
 
                 return;
-
             }
 
 
@@ -320,25 +228,30 @@ onAuthStateChanged(
                 guestData.country ||
                 "";
 
-            updateUserName();
+        } else {
 
-            startChat();
+            // =================================
+            // عضو مسجل
+            // =================================
 
-            return;
+            currentUserName =
+                user.displayName ||
+                user.email ||
+                "مستخدم";
 
         }
 
 
         // =================================
-        // عضو مسجل
+        // عرض الاسم
         // =================================
 
-        await loadRegisteredUserData(
-            user.uid,
-            user
-        );
-
         updateUserName();
+
+
+        // =================================
+        // تشغيل الشات
+        // =================================
 
         startChat();
 
@@ -371,8 +284,9 @@ if (logoutBtn) {
 
                 await signOut(auth);
 
+
                 // =========================
-                // لو كان ضيف
+                // لو ضيف
                 // =========================
 
                 if (isGuest) {
@@ -383,13 +297,14 @@ if (logoutBtn) {
 
                 }
 
-                location.href =
+
+                window.location.href =
                     "login.html";
 
             } catch (error) {
 
                 console.error(
-                    "Logout Error:",
+                    "Logout error:",
                     error
                 );
 
@@ -416,9 +331,7 @@ if (imageBtn) {
         () => {
 
             if (imageInput) {
-
                 imageInput.click();
-
             }
 
         }
@@ -428,7 +341,7 @@ if (imageBtn) {
 
 
 // =====================================
-// زر إرسال
+// زر إرسال الرسالة
 // =====================================
 
 if (sendBtn) {
@@ -481,31 +394,27 @@ async function sendMessage() {
         );
 
         return;
-
     }
 
 
-    if (!messageInput) return;
+    if (!messageInput) {
+        return;
+    }
 
 
     const text =
         messageInput.value.trim();
 
 
-    if (text === "") {
-
+    if (!text) {
         return;
-
     }
 
 
     try {
 
         if (sendBtn) {
-
-            sendBtn.disabled =
-                true;
-
+            sendBtn.disabled = true;
         }
 
 
@@ -544,15 +453,14 @@ async function sendMessage() {
         messageInput.value =
             "";
 
-
         messageInput.focus();
 
 
-    } catch (err) {
+    } catch (error) {
 
         console.error(
-            "Send Message Error:",
-            err
+            "Send message error:",
+            error
         );
 
         alert(
@@ -562,10 +470,7 @@ async function sendMessage() {
     } finally {
 
         if (sendBtn) {
-
-            sendBtn.disabled =
-                false;
-
+            sendBtn.disabled = false;
         }
 
     }
@@ -596,7 +501,6 @@ async function uploadImage() {
         );
 
         return;
-
     }
 
 
@@ -606,7 +510,6 @@ async function uploadImage() {
     ) {
 
         return;
-
     }
 
 
@@ -615,7 +518,7 @@ async function uploadImage() {
 
 
     // =================================
-    // التأكد من أنها صورة
+    // التأكد أنها صورة
     // =================================
 
     if (
@@ -625,24 +528,20 @@ async function uploadImage() {
     ) {
 
         alert(
-            "الرجاء اختيار صورة فقط."
+            "من فضلك اختر صورة فقط."
         );
 
         imageInput.value =
             "";
 
         return;
-
     }
 
 
     try {
 
         if (imageBtn) {
-
-            imageBtn.disabled =
-                true;
-
+            imageBtn.disabled = true;
         }
 
 
@@ -666,13 +565,11 @@ async function uploadImage() {
             await fetch(
                 "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
                 {
-
                     method:
                         "POST",
 
                     body:
                         formData
-
                 }
             );
 
@@ -680,10 +577,8 @@ async function uploadImage() {
         if (!response.ok) {
 
             throw new Error(
-                "Cloudinary upload failed: " +
-                response.status
+                "Cloudinary upload failed"
             );
-
         }
 
 
@@ -694,9 +589,8 @@ async function uploadImage() {
         if (!data.secure_url) {
 
             throw new Error(
-                "لم يتم الحصول على رابط الصورة."
+                "No secure URL returned"
             );
-
         }
 
 
@@ -736,11 +630,11 @@ async function uploadImage() {
             "";
 
 
-    } catch (err) {
+    } catch (error) {
 
         console.error(
-            "Upload Image Error:",
-            err
+            "Upload image error:",
+            error
         );
 
         alert(
@@ -750,17 +644,11 @@ async function uploadImage() {
     } finally {
 
         if (imageBtn) {
-
-            imageBtn.disabled =
-                false;
-
+            imageBtn.disabled = false;
         }
 
         if (imageInput) {
-
-            imageInput.value =
-                "";
-
+            imageInput.value = "";
         }
 
     }
@@ -769,7 +657,7 @@ async function uploadImage() {
 
 
 // =====================================
-// تحميل الرسائل
+// تحميل رسائل العام
 // =====================================
 
 function loadMessages() {
@@ -777,11 +665,10 @@ function loadMessages() {
     if (!messages) {
 
         console.error(
-            "Messages element not found."
+            "Element #messages not found."
         );
 
         return;
-
     }
 
 
@@ -798,14 +685,8 @@ function loadMessages() {
         );
 
 
-    // =================================
-    // إلغاء Listener قديم
-    // =================================
-
     if (messagesUnsubscribe) {
-
         messagesUnsubscribe();
-
     }
 
 
@@ -835,9 +716,9 @@ function loadMessages() {
                             "message";
 
 
-                        // =================================
+                        // =========================
                         // تحديد رسالتي
-                        // =================================
+                        // =========================
 
                         if (
                             currentUser &&
@@ -858,9 +739,9 @@ function loadMessages() {
                         }
 
 
-                        // =================================
+                        // =========================
                         // اسم المرسل
-                        // =================================
+                        // =========================
 
                         const sender =
                             document.createElement(
@@ -877,15 +758,13 @@ function loadMessages() {
                             "مستخدم";
 
 
-                        // =================================
-                        // جعل اسم العضو المسجل قابل للضغط
-                        // =================================
+                        // =========================
+                        // الضغط على اسم الشخص
+                        // =========================
 
                         if (
-                            !data.isGuest &&
                             data.uid &&
                             currentUser &&
-                            !isGuest &&
                             data.uid !==
                             currentUser.uid
                         ) {
@@ -895,7 +774,6 @@ function loadMessages() {
 
                             sender.style.textDecoration =
                                 "underline";
-
 
                             sender.title =
                                 "فتح محادثة خاصة";
@@ -922,9 +800,9 @@ function loadMessages() {
                         );
 
 
-                        // =================================
+                        // =========================
                         // رسالة نصية
-                        // =================================
+                        // =========================
 
                         if (
                             data.type ===
@@ -953,9 +831,9 @@ function loadMessages() {
                         }
 
 
-                        // =================================
+                        // =========================
                         // صورة
-                        // =================================
+                        // =========================
 
                         if (
                             data.type ===
@@ -1017,21 +895,14 @@ function loadMessages() {
                 );
 
 
-                // =================================
-                // النزول لآخر رسالة
-                // =================================
-
-                setTimeout(
-                    scrollBottom,
-                    100
-                );
+                scrollBottom();
 
             },
 
             (error) => {
 
                 console.error(
-                    "Messages Listener Error:",
+                    "Messages listener error:",
                     error
                 );
 
@@ -1052,35 +923,21 @@ function loadMessages() {
 window.openPrivateChat =
     function(uid, name) {
 
-        // ==============================
-        // لا يوجد مستخدم
-        // ==============================
-
         if (!currentUser) {
-
             return;
-
         }
 
 
-        // ==============================
-        // الضيف لا يفتح Private Chat
-        // ==============================
+        // =================================
+        // الضيف مسموح له بالخاص
+        // =================================
 
-        if (isGuest) {
-
-            alert(
-                "👤 المحادثات الخاصة متاحة للأعضاء المسجلين فقط."
-            );
-
-            return;
-
-        }
+        // لا يوجد أي شرط يمنع الضيف هنا
 
 
-        // ==============================
-        // لا يمكن فتح محادثة مع نفسك
-        // ==============================
+        // ================================
+        // منع فتح محادثة مع النفس
+        // ================================
 
         if (
             uid ===
@@ -1088,7 +945,6 @@ window.openPrivateChat =
         ) {
 
             return;
-
         }
 
 
@@ -1096,32 +952,15 @@ window.openPrivateChat =
             "private-chat.html?uid=" +
             encodeURIComponent(uid) +
             "&name=" +
-            encodeURIComponent(name);
+            encodeURIComponent(
+                name || "مستخدم"
+            );
 
     };
 
 
 // =====================================
-// النزول لآخر رسالة
-// =====================================
-
-function scrollBottom() {
-
-    if (!messages) {
-
-        return;
-
-    }
-
-
-    messages.scrollTop =
-        messages.scrollHeight;
-
-}
-
-
-// =====================================
-// زر المستخدمين
+// قائمة المستخدمين
 // =====================================
 
 if (usersBtn) {
@@ -1131,25 +970,31 @@ if (usersBtn) {
         () => {
 
             // ==========================
-            // الضيف لا يحتاج users
+            // العضو والضيف مسموح لهم
             // ==========================
-
-            if (isGuest) {
-
-                alert(
-                    "👤 قائمة الأعضاء متاحة للمستخدمين المسجلين فقط."
-                );
-
-                return;
-
-            }
-
 
             window.location.href =
                 "users.html";
 
         }
     );
+
+}
+
+
+// =====================================
+// النزول لآخر رسالة
+// =====================================
+
+function scrollBottom() {
+
+    if (!messages) {
+        return;
+    }
+
+
+    messages.scrollTop =
+        messages.scrollHeight;
 
 }
 
@@ -1177,5 +1022,5 @@ window.addEventListener(
 // =====================================
 
 console.log(
-    "✅ Cafe Arab Chat V3 Loaded"
-); 
+    "✅ Cafe Arab Chat - Guest + Registered Users"
+);
