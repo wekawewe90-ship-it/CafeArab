@@ -11,9 +11,7 @@ import {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp,
-    doc,
-    getDoc
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -24,7 +22,7 @@ import {
 
 
 // =====================================
-// Ø¹Ù†Ø§ØµØ± Ø§Ù„ØµÙØ­Ø©
+// عناصر الصفحة
 // =====================================
 
 const messages =
@@ -53,12 +51,12 @@ const usersBtn =
 
 
 // =====================================
-// Ù…ØªØºÙŠØ±Ø§Øª Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…
+// متغيرات المستخدم
 // =====================================
 
 let currentUser = null;
 
-let currentUserName = "Ù…Ø³ØªØ®Ø¯Ù…";
+let currentUserName = "مستخدم";
 
 let currentUserCountry = "";
 
@@ -68,7 +66,7 @@ let messagesUnsubscribe = null;
 
 
 // =====================================
-// Ø§Ù„Ø­ØµÙˆÙ„ Ø¹Ù„Ù‰ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¶ÙŠÙ
+// الحصول على بيانات الضيف
 // =====================================
 
 function getGuestData() {
@@ -110,7 +108,7 @@ function getGuestData() {
 
 
 // =====================================
-// Ø¹Ø±Ø¶ Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…
+// عرض اسم المستخدم
 // =====================================
 
 function updateUserName() {
@@ -120,12 +118,12 @@ function updateUserName() {
     }
 
     userName.textContent =
-        "ðŸ‘¤ " + currentUserName;
+        "👤 " + currentUserName;
 }
 
 
 // =====================================
-// Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„
+// التحقق من تسجيل الدخول
 // =====================================
 
 onAuthStateChanged(
@@ -133,7 +131,7 @@ onAuthStateChanged(
     async (user) => {
 
         // =================================
-        // Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ù…Ø³ØªØ®Ø¯Ù… Firebase
+        // لا يوجد مستخدم Firebase
         // =================================
 
         if (!user) {
@@ -142,7 +140,7 @@ onAuthStateChanged(
                 getGuestData();
 
             // =============================
-            // ÙŠÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª Ø¶ÙŠÙ
+            // يوجد بيانات ضيف
             // =============================
 
             if (guestData) {
@@ -163,7 +161,7 @@ onAuthStateChanged(
                     );
 
                     alert(
-                        "ØªØ¹Ø°Ø± Ø¯Ø®ÙˆÙ„ Ø§Ù„Ø¶ÙŠÙ. ØªØ£ÙƒØ¯ Ø£Ù† Anonymous Authentication Ù…ÙØ¹Ù„Ø© ÙÙŠ Firebase."
+                        "تعذر دخول الضيف. تأكد أن Anonymous Authentication مفعلة في Firebase."
                     );
 
                     return;
@@ -172,7 +170,7 @@ onAuthStateChanged(
 
 
             // =============================
-            // Ù„Ø§ Ø¶ÙŠÙ ÙˆÙ„Ø§ Ø¹Ø¶Ùˆ
+            // لا ضيف ولا عضو
             // =============================
 
             window.location.href =
@@ -183,7 +181,7 @@ onAuthStateChanged(
 
 
         // =================================
-        // Ø­ÙØ¸ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø§Ù„Ø­Ø§Ù„ÙŠ
+        // حفظ المستخدم الحالي
         // =================================
 
         currentUser =
@@ -191,7 +189,7 @@ onAuthStateChanged(
 
 
         // =================================
-        // Ù‡Ù„ Ù‡Ùˆ Ø¶ÙŠÙØŸ
+        // هل هو ضيف؟
         // =================================
 
         isGuest =
@@ -199,7 +197,7 @@ onAuthStateChanged(
 
 
         // =================================
-        // Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¶ÙŠÙ
+        // بيانات الضيف
         // =================================
 
         if (isGuest) {
@@ -224,7 +222,7 @@ onAuthStateChanged(
 
             currentUserName =
                 guestData.name ||
-                "Ø¶ÙŠÙ";
+                "ضيف";
 
             currentUserCountry =
                 guestData.country ||
@@ -233,72 +231,26 @@ onAuthStateChanged(
         } else {
 
             // =================================
-            // Ø¹Ø¶Ùˆ Ù…Ø³Ø¬Ù„
+            // عضو مسجل
             // =================================
 
-            try {
-
-                const userRef =
-                    doc(
-                        db,
-                        "users",
-                        user.uid
-                    );
-
-                const userSnap =
-                    await getDoc(
-                        userRef
-                    );
-
-                if (
-                    userSnap.exists()
-                ) {
-
-                    const userData =
-                        userSnap.data();
-
-                    currentUserName =
-                        userData.name ||
-                        user.displayName ||
-                        "Ù…Ø³ØªØ®Ø¯Ù…";
-
-                    currentUserCountry =
-                        userData.country ||
-                        "";
-
-                } else {
-
-                    currentUserName =
-                        user.displayName ||
-                        "Ù…Ø³ØªØ®Ø¯Ù…";
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Load user profile error:",
-                    error
-                );
-
-                currentUserName =
-                    user.displayName ||
-                    "Ù…Ø³ØªØ®Ø¯Ù…";
-
-            }
+            currentUserName =
+                user.displayName ||
+                user.email ||
+                "مستخدم";
 
         }
 
 
         // =================================
-        // Ø¹Ø±Ø¶ Ø§Ù„Ø§Ø³Ù…
+        // عرض الاسم
         // =================================
 
         updateUserName();
 
 
         // =================================
-        // ØªØ´ØºÙŠÙ„ Ø§Ù„Ø´Ø§Øª
+        // تشغيل الشات
         // =================================
 
         startChat();
@@ -308,7 +260,7 @@ onAuthStateChanged(
 
 
 // =====================================
-// ØªØ´ØºÙŠÙ„ Ø§Ù„Ø´Ø§Øª
+// تشغيل الشات
 // =====================================
 
 function startChat() {
@@ -319,7 +271,7 @@ function startChat() {
 
 
 // =====================================
-// ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬
+// تسجيل الخروج
 // =====================================
 
 if (logoutBtn) {
@@ -334,7 +286,7 @@ if (logoutBtn) {
 
 
                 // =========================
-                // Ù„Ùˆ Ø¶ÙŠÙ
+                // لو ضيف
                 // =========================
 
                 if (isGuest) {
@@ -357,7 +309,7 @@ if (logoutBtn) {
                 );
 
                 alert(
-                    "Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬."
+                    "حدث خطأ أثناء تسجيل الخروج."
                 );
 
             }
@@ -369,7 +321,7 @@ if (logoutBtn) {
 
 
 // =====================================
-// Ø²Ø± Ø§Ù„ØµÙˆØ±
+// زر الصور
 // =====================================
 
 if (imageBtn) {
@@ -389,7 +341,7 @@ if (imageBtn) {
 
 
 // =====================================
-// Ø²Ø± Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø©
+// زر إرسال الرسالة
 // =====================================
 
 if (sendBtn) {
@@ -403,7 +355,7 @@ if (sendBtn) {
 
 
 // =====================================
-// Enter Ù„Ù„Ø¥Ø±Ø³Ø§Ù„
+// Enter للإرسال
 // =====================================
 
 if (messageInput) {
@@ -430,7 +382,7 @@ if (messageInput) {
 
 
 // =====================================
-// Ø¥Ø±Ø³Ø§Ù„ Ø±Ø³Ø§Ù„Ø© Ù†ØµÙŠØ©
+// إرسال رسالة نصية
 // =====================================
 
 async function sendMessage() {
@@ -438,7 +390,7 @@ async function sendMessage() {
     if (!currentUser) {
 
         alert(
-            "Ø¬Ø§Ø±Ù ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø­Ø³Ø§Ø¨ØŒ Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰."
+            "جارٍ تجهيز الحساب، حاول مرة أخرى."
         );
 
         return;
@@ -512,7 +464,7 @@ async function sendMessage() {
         );
 
         alert(
-            "Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø©."
+            "حدث خطأ أثناء إرسال الرسالة."
         );
 
     } finally {
@@ -527,7 +479,7 @@ async function sendMessage() {
 
 
 // =====================================
-// Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±
+// رفع الصور
 // =====================================
 
 if (imageInput) {
@@ -545,7 +497,7 @@ async function uploadImage() {
     if (!currentUser) {
 
         alert(
-            "Ø¬Ø§Ø±Ù ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø­Ø³Ø§Ø¨ØŒ Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰."
+            "جارٍ تجهيز الحساب، حاول مرة أخرى."
         );
 
         return;
@@ -566,7 +518,7 @@ async function uploadImage() {
 
 
     // =================================
-    // Ø§Ù„ØªØ£ÙƒØ¯ Ø£Ù†Ù‡Ø§ ØµÙˆØ±Ø©
+    // التأكد أنها صورة
     // =================================
 
     if (
@@ -576,7 +528,7 @@ async function uploadImage() {
     ) {
 
         alert(
-            "Ù…Ù† ÙØ¶Ù„Ùƒ Ø§Ø®ØªØ± ØµÙˆØ±Ø© ÙÙ‚Ø·."
+            "من فضلك اختر صورة فقط."
         );
 
         imageInput.value =
@@ -686,321 +638,7 @@ async function uploadImage() {
         );
 
         alert(
-            "ÙØ´Ù„ Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©."
-        );
-
-    } finally {
-
-        if (imageBtn) {
-            imageBtn.disabled = false;
-        }
-
-        if (imageInput) {
-            imageInput.value = "";
-        }
-
-    }
-
-                      }
-// =====================================
-// Ø²Ø± Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø©
-// =====================================
-
-if (sendBtn) {
-
-    sendBtn.addEventListener(
-        "click",
-        sendMessage
-    );
-
-}
-
-
-// =====================================
-// Enter Ù„Ù„Ø¥Ø±Ø³Ø§Ù„
-// =====================================
-
-if (messageInput) {
-
-    messageInput.addEventListener(
-        "keydown",
-        (e) => {
-
-            if (
-                e.key === "Enter" &&
-                !e.shiftKey
-            ) {
-
-                e.preventDefault();
-
-                sendMessage();
-
-            }
-
-        }
-    );
-
-}
-
-
-// =====================================
-// Ø¥Ø±Ø³Ø§Ù„ Ø±Ø³Ø§Ù„Ø© Ù†ØµÙŠØ©
-// =====================================
-
-async function sendMessage() {
-
-    if (!currentUser) {
-
-        alert(
-            "Ø¬Ø§Ø±Ù ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø­Ø³Ø§Ø¨ØŒ Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰."
-        );
-
-        return;
-    }
-
-
-    if (!messageInput) {
-        return;
-    }
-
-
-    const text =
-        messageInput.value.trim();
-
-
-    if (!text) {
-        return;
-    }
-
-
-    try {
-
-        if (sendBtn) {
-            sendBtn.disabled = true;
-        }
-
-
-        await addDoc(
-            collection(
-                db,
-                "messages"
-            ),
-            {
-
-                uid:
-                    currentUser.uid,
-
-                user:
-                    currentUserName,
-
-                country:
-                    currentUserCountry,
-
-                isGuest:
-                    isGuest,
-
-                type:
-                    "text",
-
-                text:
-                    text,
-
-                createdAt:
-                    serverTimestamp()
-
-            }
-        );
-
-
-        messageInput.value =
-            "";
-
-        messageInput.focus();
-
-
-    } catch (error) {
-
-        console.error(
-            "Send message error:",
-            error
-        );
-
-        alert(
-            "Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø©."
-        );
-
-    } finally {
-
-        if (sendBtn) {
-            sendBtn.disabled = false;
-        }
-
-    }
-
-}
-
-
-// =====================================
-// Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±
-// =====================================
-
-if (imageInput) {
-
-    imageInput.addEventListener(
-        "change",
-        uploadImage
-    );
-
-}
-
-
-async function uploadImage() {
-
-    if (!currentUser) {
-
-        alert(
-            "Ø¬Ø§Ø±Ù ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø­Ø³Ø§Ø¨ØŒ Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰."
-        );
-
-        return;
-    }
-
-
-    if (
-        !imageInput ||
-        !imageInput.files.length
-    ) {
-
-        return;
-    }
-
-
-    const file =
-        imageInput.files[0];
-
-
-    // =================================
-    // Ø§Ù„ØªØ£ÙƒØ¯ Ø£Ù†Ù‡Ø§ ØµÙˆØ±Ø©
-    // =================================
-
-    if (
-        !file.type.startsWith(
-            "image/"
-        )
-    ) {
-
-        alert(
-            "Ù…Ù† ÙØ¶Ù„Ùƒ Ø§Ø®ØªØ± ØµÙˆØ±Ø© ÙÙ‚Ø·."
-        );
-
-        imageInput.value =
-            "";
-
-        return;
-    }
-
-
-    try {
-
-        if (imageBtn) {
-            imageBtn.disabled = true;
-        }
-
-
-        const formData =
-            new FormData();
-
-
-        formData.append(
-            "file",
-            file
-        );
-
-
-        formData.append(
-            "upload_preset",
-            "ml_default"
-        );
-
-
-        const response =
-            await fetch(
-                "https://api.cloudinary.com/v1_1/vqwksojr/image/upload",
-                {
-                    method:
-                        "POST",
-
-                    body:
-                        formData
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Cloudinary upload failed"
-            );
-        }
-
-
-        const data =
-            await response.json();
-
-
-        if (!data.secure_url) {
-
-            throw new Error(
-                "No secure URL returned"
-            );
-        }
-
-
-        await addDoc(
-            collection(
-                db,
-                "messages"
-            ),
-            {
-
-                uid:
-                    currentUser.uid,
-
-                user:
-                    currentUserName,
-
-                country:
-                    currentUserCountry,
-
-                isGuest:
-                    isGuest,
-
-                type:
-                    "image",
-
-                image:
-                    data.secure_url,
-
-                createdAt:
-                    serverTimestamp()
-
-            }
-        );
-
-
-        imageInput.value =
-            "";
-
-
-    } catch (error) {
-
-        console.error(
-            "Upload image error:",
-            error
-        );
-
-        alert(
-            "ÙØ´Ù„ Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©."
+            "فشل رفع الصورة."
         );
 
     } finally {
@@ -1019,7 +657,7 @@ async function uploadImage() {
 
 
 // =====================================
-// ØªØ­Ù…ÙŠÙ„ Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ø¹Ø§Ù…
+// تحميل رسائل العام
 // =====================================
 
 function loadMessages() {
@@ -1079,7 +717,7 @@ function loadMessages() {
 
 
                         // =========================
-                        // ØªØ­Ø¯ÙŠØ¯ Ø±Ø³Ø§Ù„ØªÙŠ
+                        // تحديد رسالتي
                         // =========================
 
                         if (
@@ -1102,7 +740,7 @@ function loadMessages() {
 
 
                         // =========================
-                        // Ø§Ø³Ù… Ø§Ù„Ù…Ø±Ø³Ù„
+                        // اسم المرسل
                         // =========================
 
                         const sender =
@@ -1117,11 +755,11 @@ function loadMessages() {
 
                         sender.textContent =
                             data.user ||
-                            "Ù…Ø³ØªØ®Ø¯Ù…";
+                            "مستخدم";
 
 
                         // =========================
-                        // Ø§Ù„Ø¶ØºØ· Ø¹Ù„Ù‰ Ø§Ø³Ù… Ø§Ù„Ø´Ø®Øµ
+                        // الضغط على اسم الشخص
                         // =========================
 
                         if (
@@ -1138,7 +776,7 @@ function loadMessages() {
                                 "underline";
 
                             sender.title =
-                                "ÙØªØ­ Ù…Ø­Ø§Ø¯Ø«Ø© Ø®Ø§ØµØ©";
+                                "فتح محادثة خاصة";
 
 
                             sender.addEventListener(
@@ -1148,7 +786,7 @@ function loadMessages() {
                                     openPrivateChat(
                                         data.uid,
                                         data.user ||
-                                        "Ù…Ø³ØªØ®Ø¯Ù…"
+                                        "مستخدم"
                                     );
 
                                 }
@@ -1163,7 +801,7 @@ function loadMessages() {
 
 
                         // =========================
-                        // Ø±Ø³Ø§Ù„Ø© Ù†ØµÙŠØ©
+                        // رسالة نصية
                         // =========================
 
                         if (
@@ -1194,7 +832,7 @@ function loadMessages() {
 
 
                         // =========================
-                        // ØµÙˆØ±Ø©
+                        // صورة
                         // =========================
 
                         if (
@@ -1218,7 +856,7 @@ function loadMessages() {
 
 
                             img.alt =
-                                "ØµÙˆØ±Ø©";
+                                "صورة";
 
 
                             img.loading =
@@ -1269,241 +907,17 @@ function loadMessages() {
                 );
 
                 alert(
-                    "Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø±Ø³Ø§Ø¦Ù„."
+                    "حدث خطأ أثناء تحميل الرسائل."
                 );
 
             }
         );
 
-              }
-// =====================================
-// ØªÙƒÙ…Ù„Ø© ØªØ­Ù…ÙŠÙ„ Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ø¹Ø§Ù…
-// =====================================
-
-snapshot.forEach(
-    (messageDoc) => {
-
-        const data =
-            messageDoc.data();
-
-
-        const box =
-            document.createElement(
-                "div"
-            );
-
-
-        box.className =
-            "message";
-
-
-        // =========================
-        // ØªØ­Ø¯ÙŠØ¯ Ø±Ø³Ø§Ù„ØªÙŠ
-        // =========================
-
-        if (
-            currentUser &&
-            data.uid ===
-            currentUser.uid
-        ) {
-
-            box.classList.add(
-                "me"
-            );
-
-        } else {
-
-            box.classList.add(
-                "other"
-            );
-
-        }
-
-
-        // =========================
-        // Ø§Ø³Ù… Ø§Ù„Ù…Ø±Ø³Ù„
-        // =========================
-
-        const sender =
-            document.createElement(
-                "div"
-            );
-
-
-        sender.className =
-            "sender";
-
-
-        sender.textContent =
-            data.user ||
-            "Ù…Ø³ØªØ®Ø¯Ù…";
-
-
-        // =========================
-        // Ø§Ù„Ø¶ØºØ· Ø¹Ù„Ù‰ Ø§Ø³Ù… Ø§Ù„Ø´Ø®Øµ
-        // =========================
-
-        if (
-            data.uid &&
-            currentUser &&
-            data.uid !==
-            currentUser.uid
-        ) {
-
-            sender.style.cursor =
-                "pointer";
-
-            sender.style.textDecoration =
-                "underline";
-
-            sender.title =
-                "ÙØªØ­ Ù…Ø­Ø§Ø¯Ø«Ø© Ø®Ø§ØµØ©";
-
-
-            sender.addEventListener(
-                "click",
-                () => {
-
-                    openPrivateChat(
-                        data.uid,
-                        data.user ||
-                        "Ù…Ø³ØªØ®Ø¯Ù…"
-                    );
-
-                }
-            );
-
-        }
-
-
-        box.appendChild(
-            sender
-        );
-
-
-        // =========================
-        // Ø±Ø³Ø§Ù„Ø© Ù†ØµÙŠØ©
-        // =========================
-
-        if (
-            data.type ===
-            "text"
-        ) {
-
-            const text =
-                document.createElement(
-                    "div"
-                );
-
-
-            text.className =
-                "text";
-
-
-            text.textContent =
-                data.text ||
-                "";
-
-
-            box.appendChild(
-                text
-            );
-
-        }
-
-
-        // =========================
-        // ØµÙˆØ±Ø©
-        // =========================
-
-        if (
-            data.type ===
-                "image" &&
-            data.image
-        ) {
-
-            const img =
-                document.createElement(
-                    "img"
-                );
-
-
-            img.src =
-                data.image;
-
-
-            img.className =
-                "chatImage";
-
-
-            img.alt =
-                "ØµÙˆØ±Ø©";
-
-
-            img.loading =
-                "lazy";
-
-
-            img.style.cursor =
-                "pointer";
-
-
-            img.addEventListener(
-                "click",
-                () => {
-
-                    window.open(
-                        data.image,
-                        "_blank"
-                    );
-
-                }
-            );
-
-
-            box.appendChild(
-                img
-            );
-
-        }
-
-
-        messages.appendChild(
-            box
-        );
-
-    }
-);
-
-
-scrollBottom();
-
-
-// =====================================
-// Ø®Ø·Ø£ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø±Ø³Ø§Ø¦Ù„
-// =====================================
-
-},
-(error) => {
-
-    console.error(
-        "Messages listener error:",
-        error
-    );
-
-    alert(
-        "Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø±Ø³Ø§Ø¦Ù„."
-    );
-
-}
-
-);
-
 }
 
 
 // =====================================
-// ÙØªØ­ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ø§Ù„Ø®Ø§ØµØ©
+// فتح المحادثة الخاصة
 // =====================================
 
 window.openPrivateChat =
@@ -1515,14 +929,14 @@ window.openPrivateChat =
 
 
         // =================================
-        // Ø§Ù„Ø¶ÙŠÙ Ù…Ø³Ù…ÙˆØ­ Ù„Ù‡ Ø¨Ø§Ù„Ø®Ø§Øµ
+        // الضيف مسموح له بالخاص
         // =================================
 
-        // Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ø£ÙŠ Ø´Ø±Ø· ÙŠÙ…Ù†Ø¹ Ø§Ù„Ø¶ÙŠÙ Ù‡Ù†Ø§
+        // لا يوجد أي شرط يمنع الضيف هنا
 
 
         // ================================
-        // Ù…Ù†Ø¹ ÙØªØ­ Ù…Ø­Ø§Ø¯Ø«Ø© Ù…Ø¹ Ø§Ù„Ù†ÙØ³
+        // منع فتح محادثة مع النفس
         // ================================
 
         if (
@@ -1539,14 +953,14 @@ window.openPrivateChat =
             encodeURIComponent(uid) +
             "&name=" +
             encodeURIComponent(
-                name || "Ù…Ø³ØªØ®Ø¯Ù…"
+                name || "مستخدم"
             );
 
     };
 
 
 // =====================================
-// Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†
+// قائمة المستخدمين
 // =====================================
 
 if (usersBtn) {
@@ -1556,7 +970,7 @@ if (usersBtn) {
         () => {
 
             // ==========================
-            // Ø§Ù„Ø¹Ø¶Ùˆ ÙˆØ§Ù„Ø¶ÙŠÙ Ù…Ø³Ù…ÙˆØ­ Ù„Ù‡Ù…
+            // العضو والضيف مسموح لهم
             // ==========================
 
             window.location.href =
@@ -1569,7 +983,7 @@ if (usersBtn) {
 
 
 // =====================================
-// Ø§Ù„Ù†Ø²ÙˆÙ„ Ù„Ø¢Ø®Ø± Ø±Ø³Ø§Ù„Ø©
+// النزول لآخر رسالة
 // =====================================
 
 function scrollBottom() {
@@ -1586,7 +1000,7 @@ function scrollBottom() {
 
 
 // =====================================
-// ØªÙ†Ø¸ÙŠÙ Listener
+// تنظيف Listener
 // =====================================
 
 window.addEventListener(
@@ -1604,9 +1018,9 @@ window.addEventListener(
 
 
 // =====================================
-// Ù†Ù‡Ø§ÙŠØ© Ø§Ù„Ù…Ù„Ù
+// نهاية الملف
 // =====================================
 
 console.log(
-    "âœ… Cafe Arab Chat - Guest + Registered Users"
+    "✅ Cafe Arab Chat - Guest + Registered Users"
 );
