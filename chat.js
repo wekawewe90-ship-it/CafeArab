@@ -11,7 +11,9 @@ import {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp
+    serverTimestamp,
+    doc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -130,18 +132,10 @@ onAuthStateChanged(
     auth,
     async (user) => {
 
-        // =================================
-        // لا يوجد مستخدم Firebase
-        // =================================
-
         if (!user) {
 
             const guestData =
                 getGuestData();
-
-            // =============================
-            // يوجد بيانات ضيف
-            // =============================
 
             if (guestData) {
 
@@ -168,11 +162,6 @@ onAuthStateChanged(
                 }
             }
 
-
-            // =============================
-            // لا ضيف ولا عضو
-            // =============================
-
             window.location.href =
                 "login.html";
 
@@ -180,25 +169,13 @@ onAuthStateChanged(
         }
 
 
-        // =================================
-        // حفظ المستخدم الحالي
-        // =================================
-
         currentUser =
             user;
 
 
-        // =================================
-        // هل هو ضيف؟
-        // =================================
-
         isGuest =
             user.isAnonymous === true;
 
-
-        // =================================
-        // بيانات الضيف
-        // =================================
 
         if (isGuest) {
 
@@ -234,31 +211,60 @@ onAuthStateChanged(
             // عضو مسجل
             // =================================
 
-            currentUserName =
-                user.displayName ||
-                user.email ||
-                "مستخدم";
+            // الاسم الحقيقي محفوظ في users/{uid}.
+            // نقرأ name أولاً، ثم username، ثم displayName.
+
+            try {
+
+                const userDoc =
+                    await getDoc(
+                        doc(db, "users", user.uid)
+                    );
+
+                if (userDoc.exists()) {
+
+                    const userData =
+                        userDoc.data();
+
+                    currentUserName =
+                        userData.name ||
+                        userData.username ||
+                        user.displayName ||
+                        "مستخدم";
+
+                    currentUserCountry =
+                        userData.country ||
+                        "";
+
+                } else {
+
+                    currentUserName =
+                        user.displayName ||
+                        "مستخدم";
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Error loading registered user data:",
+                    error
+                );
+
+                currentUserName =
+                    user.displayName ||
+                    "مستخدم";
+            }
 
         }
 
 
-        // =================================
-        // عرض الاسم
-        // =================================
-
         updateUserName();
-
-
-        // =================================
-        // تشغيل الشات
-        // =================================
 
         startChat();
 
     }
 );
-
-
 // =====================================
 // تشغيل الشات
 // =====================================
@@ -284,10 +290,6 @@ if (logoutBtn) {
 
                 await signOut(auth);
 
-
-                // =========================
-                // لو ضيف
-                // =========================
 
                 if (isGuest) {
 
@@ -431,6 +433,9 @@ async function sendMessage() {
                 user:
                     currentUserName,
 
+                name:
+                    currentUserName,
+
                 country:
                     currentUserCountry,
 
@@ -475,9 +480,7 @@ async function sendMessage() {
 
     }
 
-}
-
-
+                }
 // =====================================
 // رفع الصور
 // =====================================
@@ -516,10 +519,6 @@ async function uploadImage() {
     const file =
         imageInput.files[0];
 
-
-    // =================================
-    // التأكد أنها صورة
-    // =================================
 
     if (
         !file.type.startsWith(
@@ -607,6 +606,9 @@ async function uploadImage() {
                 user:
                     currentUserName,
 
+                name:
+                    currentUserName,
+
                 country:
                     currentUserCountry,
 
@@ -657,6 +659,76 @@ async function uploadImage() {
 
 
 // =====================================
+// كاش أسماء المستخدمين
+// =====================================
+
+const senderNameCache = new Map();
+
+async function getSenderName(data) {
+
+    if (data.isGuest === true) {
+        return data.user || data.name || "ضيف";
+    }
+
+
+    if (data.name) {
+        return data.name;
+    }
+
+
+    if (!data.uid) {
+        return data.user || "مستخدم";
+    }
+
+
+    if (senderNameCache.has(data.uid)) {
+        return senderNameCache.get(data.uid);
+    }
+
+
+    try {
+
+        const userDoc = await getDoc(
+            doc(db, "users", data.uid)
+        );
+
+
+        if (userDoc.exists()) {
+
+            const userData =
+                userDoc.data();
+
+
+            const name =
+                userData.name ||
+                userData.username ||
+                data.user ||
+                "مستخدم";
+
+
+            senderNameCache.set(
+                data.uid,
+                name
+            );
+
+
+            return name;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error loading sender name:",
+            error
+        );
+    }
+
+
+    return data.user || "مستخدم";
+}
+
+
+// =====================================
 // تحميل رسائل العام
 // =====================================
 
@@ -693,7 +765,7 @@ function loadMessages() {
     messagesUnsubscribe =
         onSnapshot(
             q,
-            (snapshot) => {
+            async (snapshot) => {
 
                 messages.innerHTML =
                     "";
@@ -716,10 +788,6 @@ function loadMessages() {
                             "message";
 
 
-                        // =========================
-                        // تحديد رسالتي
-                        // =========================
-
                         if (
                             currentUser &&
                             data.uid ===
@@ -739,10 +807,6 @@ function loadMessages() {
                         }
 
 
-                        // =========================
-                        // اسم المرسل
-                        // =========================
-
                         const sender =
                             document.createElement(
                                 "div"
@@ -754,13 +818,8 @@ function loadMessages() {
 
 
                         sender.textContent =
-                            data.user ||
-                            "مستخدم";
+                            await getSenderName(data);
 
-
-                        // =========================
-                        // الضغط على اسم الشخص
-                        // =========================
 
                         if (
                             data.uid &&
@@ -800,10 +859,6 @@ function loadMessages() {
                         );
 
 
-                        // =========================
-                        // رسالة نصية
-                        // =========================
-
                         if (
                             data.type ===
                             "text"
@@ -830,10 +885,6 @@ function loadMessages() {
 
                         }
 
-
-                        // =========================
-                        // صورة
-                        // =========================
 
                         if (
                             data.type ===
@@ -913,9 +964,7 @@ function loadMessages() {
             }
         );
 
-}
-
-
+    }
 // =====================================
 // فتح المحادثة الخاصة
 // =====================================
@@ -928,16 +977,8 @@ window.openPrivateChat =
         }
 
 
-        // =================================
         // الضيف مسموح له بالخاص
-        // =================================
 
-        // لا يوجد أي شرط يمنع الضيف هنا
-
-
-        // ================================
-        // منع فتح محادثة مع النفس
-        // ================================
 
         if (
             uid ===
@@ -968,10 +1009,6 @@ if (usersBtn) {
     usersBtn.addEventListener(
         "click",
         () => {
-
-            // ==========================
-            // العضو والضيف مسموح لهم
-            // ==========================
 
             window.location.href =
                 "users.html";
