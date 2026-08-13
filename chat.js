@@ -42,6 +42,12 @@ const imageBtn =
 const imageInput =
     document.getElementById("imageInput");
 
+const videoBtn =
+    document.getElementById("videoBtn");
+
+const videoInput =
+    document.getElementById("videoInput");
+
 const logoutBtn =
     document.getElementById("logoutBtn");
 
