@@ -1240,8 +1240,7 @@ if (videoInput) {
 // =====================================
 
 async function sendVideo(file) {
-    alert("دخلنا رفع الفيديو 🎥");
-
+    a
     if (!file) return;
 
     if (!currentUser) return;
@@ -1285,8 +1284,6 @@ async function sendVideo(file) {
 
         const data =
             await response.json();
-console.log("VIDEO CLOUDINARY RESPONSE:", data);
-alert("Cloudinary رد علينا 🎥");
         
         if (!data.secure_url) {
 
