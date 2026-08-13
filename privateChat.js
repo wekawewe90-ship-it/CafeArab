@@ -1285,7 +1285,9 @@ async function sendVideo(file) {
 
         const data =
             await response.json();
-
+console.log("VIDEO CLOUDINARY RESPONSE:", data);
+alert("Cloudinary رد علينا 🎥");
+        
         if (!data.secure_url) {
 
             throw new Error(
