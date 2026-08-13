@@ -11,7 +11,9 @@ import {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp
+    serverTimestamp, 
+    doc,
+    getDoc 
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -228,19 +230,56 @@ onAuthStateChanged(
                 guestData.country ||
                 "";
 
-        } else {
+} else {
 
-            // =================================
-            // عضو مسجل
-            // =================================
+    // =================================
+    // عضو مسجل
+    // =================================
+
+    try {
+
+        const userDoc = await getDoc(
+            doc(db, "users", user.uid)
+        );
+
+        if (userDoc.exists()) {
+
+            const userData =
+                userDoc.data();
+
+            currentUserName =
+                userData.name ||
+                userData.username ||
+                user.displayName ||
+                "مستخدم";
+
+            currentUserCountry =
+                userData.country ||
+                "";
+
+        } else {
 
             currentUserName =
                 user.displayName ||
-                user.email ||
                 "مستخدم";
 
         }
 
+    } catch (error) {
+
+        console.error(
+            "Error loading user profile:",
+            error
+        );
+
+        currentUserName =
+            user.displayName ||
+            "مستخدم";
+
+    }
+
+        }
+            
 
         // =================================
         // عرض الاسم
