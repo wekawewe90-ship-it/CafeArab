@@ -718,7 +718,191 @@ async function uploadImage() {
 
 }
 
+// =====================================
+// رفع الفيديوهات
+// =====================================
 
+if (videoInput) {
+
+    videoInput.addEventListener(
+        "change",
+        uploadVideo
+    );
+
+}
+
+
+async function uploadVideo() {
+
+    if (!currentUser) {
+
+        alert(
+            "جارٍ تجهيز الحساب، حاول مرة أخرى."
+        );
+
+        return;
+    }
+
+
+    if (
+        !videoInput ||
+        !videoInput.files.length
+    ) {
+
+        return;
+    }
+
+
+    const file =
+        videoInput.files[0];
+
+
+    // =================================
+    // التأكد أنه فيديو
+    // =================================
+
+    if (
+        !file.type.startsWith(
+            "video/"
+        )
+    ) {
+
+        alert(
+            "من فضلك اختر فيديو فقط."
+        );
+
+        videoInput.value =
+            "";
+
+        return;
+    }
+
+
+    try {
+
+        if (videoBtn) {
+            videoBtn.disabled = true;
+        }
+
+
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "file",
+            file
+        );
+
+
+        formData.append(
+            "upload_preset",
+            "ml_default"
+        );
+
+
+        const response =
+            await fetch(
+                "https://api.cloudinary.com/v1_1/vqwksojr/video/upload",
+                {
+                    method:
+                        "POST",
+
+                    body:
+                        formData
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Cloudinary video upload failed"
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.secure_url) {
+
+            throw new Error(
+                "No secure video URL returned"
+            );
+
+        }
+
+
+        // =================================
+        // حفظ الفيديو في Firestore
+        // =================================
+
+        await addDoc(
+            collection(
+                db,
+                "messages"
+            ),
+            {
+
+                uid:
+                    currentUser.uid,
+
+                user:
+                    currentUserName,
+
+                country:
+                    currentUserCountry,
+
+                isGuest:
+                    isGuest,
+
+                type:
+                    "video",
+
+                video:
+                    data.secure_url,
+
+                createdAt:
+                    serverTimestamp()
+
+            }
+        );
+
+
+        videoInput.value =
+            "";
+
+
+    } catch (error) {
+
+        console.error(
+            "Upload video error:",
+            error
+        );
+
+
+        alert(
+            "فشل رفع الفيديو."
+        );
+
+
+    } finally {
+
+        if (videoBtn) {
+            videoBtn.disabled = false;
+        }
+
+
+        if (videoInput) {
+            videoInput.value = "";
+        }
+
+    }
+
+    }
 // =====================================
 // تحميل رسائل العام
 // =====================================
