@@ -693,7 +693,44 @@ function drawMessage(data) {
         );
 
     }
+        
+// =================================
+// فيديو
+// =================================
 
+else if (
+    data.type === "video" &&
+    data.videoUrl
+) {
+
+    const video =
+        document.createElement("video");
+
+    video.src =
+        data.videoUrl;
+
+    video.controls =
+        true;
+
+    video.preload =
+        "metadata";
+
+    video.className =
+        "chat-video";
+
+    video.style.maxWidth =
+        "100%";
+
+    video.style.borderRadius =
+        "12px";
+
+    bubble.appendChild(
+        video
+    );
+
+}
+
+        
     // =================================
     // نص
     // =================================
