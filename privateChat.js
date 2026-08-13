@@ -1200,6 +1200,169 @@ if (imageInput) {
 }
 
 // =====================================
+// اختيار ورفع الفيديو
+// =====================================
+
+if (videoInput) {
+
+    videoInput.addEventListener(
+        "change",
+        (event) => {
+
+            const file =
+                event.target.files[0];
+
+            if (!file) return;
+
+            if (
+                !file.type.startsWith("video/")
+            ) {
+
+                alert(
+                    "الرجاء اختيار فيديو فقط."
+                );
+
+                videoInput.value = "";
+
+                return;
+            }
+
+            sendVideo(file);
+
+        }
+    );
+
+}
+
+
+// =====================================
+// رفع الفيديو إلى Cloudinary
+// =====================================
+
+async function sendVideo(file) {
+
+    if (!file) return;
+
+    if (!currentUser) return;
+
+    try {
+
+        if (videoBtn) {
+            videoBtn.disabled = true;
+        }
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "file",
+            file
+        );
+
+        formData.append(
+            "upload_preset",
+            "ml_default"
+        );
+
+        const response =
+            await fetch(
+                "https://api.cloudinary.com/v1_1/vqwksojr/video/upload",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Cloudinary Video Upload Failed: " +
+                response.status
+            );
+
+        }
+
+        const data =
+            await response.json();
+
+        if (!data.secure_url) {
+
+            throw new Error(
+                "لم يتم الحصول على رابط الفيديو."
+            );
+
+        }
+
+        await addDoc(
+            collection(
+                db,
+                "privateChats",
+                roomId,
+                "messages"
+            ),
+            {
+
+                senderId:
+                    currentUser.uid,
+
+                receiverId:
+                    otherUid,
+
+                senderName:
+                    currentUserName,
+
+                type:
+                    "video",
+
+                videoUrl:
+                    data.secure_url,
+
+                read:
+                    false,
+
+                createdAt:
+                    serverTimestamp()
+
+            }
+        );
+
+        await createNotification(
+            "🎥 " +
+            currentUserName +
+            " أرسل لك فيديو"
+        );
+
+        alert(
+            "تم إرسال الفيديو بنجاح ✅"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Private Video Error:",
+            error
+        );
+
+        alert(
+            "فشل إرسال الفيديو:\n" +
+            error.message
+        );
+
+    } finally {
+
+        if (videoBtn) {
+            videoBtn.disabled = false;
+        }
+
+        if (videoInput) {
+            videoInput.value = "";
+        }
+
+    }
+
+                }
+
+// =====================================
 // تنظيف Listener
 // =====================================
 
