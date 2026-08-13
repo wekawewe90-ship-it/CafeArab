@@ -1240,6 +1240,7 @@ if (videoInput) {
 // =====================================
 
 async function sendVideo(file) {
+    alert("دخلنا رفع الفيديو 🎥");
 
     if (!file) return;
 
