@@ -1277,7 +1277,6 @@ if (videoInput) {
 // =====================================
 
 async function sendVideo(file) {
-    a
     if (!file) return;
 
     if (!currentUser) return;
@@ -1397,7 +1396,6 @@ async function sendVideo(file) {
 
     }
 
-                }
 
 // =====================================
 // تنظيف Listener
