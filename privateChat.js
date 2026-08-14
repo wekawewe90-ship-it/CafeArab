@@ -1575,6 +1575,36 @@ async function sendAudio(file) {
     }
 
             }
+if (audioInput) {
+
+    audioInput.addEventListener(
+        "change",
+        (event) => {
+
+            const file =
+                event.target.files[0];
+
+            if (!file) return;
+
+            if (
+                !file.type.startsWith("audio/")
+            ) {
+
+                alert(
+                    "الرجاء اختيار ملف صوت فقط."
+                );
+
+                audioInput.value = "";
+
+                return;
+            }
+
+            sendAudio(file);
+
+        }
+    );
+
+}
 
 // =====================================
 // تنظيف Listener
