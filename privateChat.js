@@ -452,8 +452,6 @@ function loadMessages() {
                             data
                         );
 
-                        // الرسائل التي أرسلها الطرف الآخر
-                        // ولم تتم قراءتها بعد
                         if (
                             data.senderId ===
                                 otherUid &&
@@ -471,7 +469,6 @@ function loadMessages() {
 
                 scrollBottom();
 
-                // تحويل الرسائل إلى مقروءة
                 await markMessagesAsRead(
                     unreadMessages
                 );
@@ -591,7 +588,6 @@ function formatTime(timestamp) {
 
 function createReadStatus(data) {
 
-    // العلامات تظهر فقط للرسائل المرسلة مني
     if (
         !currentUser ||
         data.senderId !== currentUser.uid
@@ -699,91 +695,73 @@ function drawMessage(data) {
         );
 
     }
-        
-// =================================
-// فيديو
-// =================================
 
-else if (
-    data.type === "video" &&
-    data.videoUrl
-) {
+    // =================================
+    // فيديو
+    // =================================
 
-    const video =
-        document.createElement("video");
+    else if (
+        data.type === "video" &&
+        data.videoUrl
+    ) {
 
-    video.src =
-        data.videoUrl;
+        const video =
+            document.createElement("video");
 
-    video.controls =
-        true;
+        video.src =
+            data.videoUrl;
 
-    video.preload =
-        "metadata";
+        video.controls =
+            true;
 
-    video.className =
-        "chat-video";
+        video.preload =
+            "metadata";
 
-    video.style.maxWidth =
-        "100%";
+        video.className =
+            "chat-video";
 
-    video.style.borderRadius =
-        "12px";
+        video.style.maxWidth =
+            "100%";
 
-    bubble.appendChild(
-        video
-    );
+        video.style.borderRadius =
+            "12px";
 
-}
+        bubble.appendChild(
+            video
+        );
 
-// =================================
-// صوت
-// =================================
+    }
 
-else if (
-    data.type === "audio" &&
-    data.audioUrl
-) {
+    // =================================
+    // صوت
+    // =================================
 
-    const title =
-        document.createElement("div");
+    else if (
+        data.type === "audio" &&
+        data.audioUrl
+    ) {
 
-    title.textContent =
-        "🎤 مقطع صوتي";
+        const audio =
+            document.createElement("audio");
 
-    title.style.marginBottom =
-        "6px";
+        audio.src =
+            data.audioUrl;
 
-    title.style.fontWeight =
-        "bold";
+        audio.controls =
+            true;
 
-    bubble.appendChild(title);
+        audio.preload =
+            "metadata";
 
-    const audio =
-        document.createElement("audio");
+        audio.style.width =
+            "100%";
 
-    audio.controls =
-        true;
+        bubble.appendChild(
+            audio
+        );
 
-    audio.preload =
-        "metadata";
+    }
 
-    audio.src =
-        data.audioUrl;
-
-    audio.style.display =
-        "block";
-
-    audio.style.width =
-        "250px";
-
-    audio.style.maxWidth =
-        "100%";
-
-    bubble.appendChild(audio);
-
-}
-    
     // =================================
     // نص
     // =================================
@@ -820,7 +798,6 @@ else if (
     meta.style.marginTop =
         "3px";
 
-    // الوقت
     const time =
         document.createElement(
             "small"
@@ -838,7 +815,6 @@ else if (
         time
     );
 
-    // ✓✓
     const readStatus =
         createReadStatus(
             data
@@ -1206,8 +1182,7 @@ async function sendImage(file) {
 
     }
 
-}
-
+                    }
 // =====================================
 // زر اختيار الصورة
 // =====================================
@@ -1260,9 +1235,10 @@ if (audioBtn) {
         "click",
         () => {
 
-
             if (audioInput) {
+
                 audioInput.click();
+
             }
 
         }
@@ -1335,6 +1311,7 @@ if (videoInput) {
                 videoInput.value = "";
 
                 return;
+
             }
 
             sendVideo(file);
@@ -1344,13 +1321,12 @@ if (videoInput) {
 
 }
 
-
 // =====================================
 // رفع الفيديو إلى Cloudinary
 // =====================================
 
 async function sendVideo(file) {
-    
+
     if (!file) return;
 
     if (!currentUser) return;
@@ -1358,7 +1334,10 @@ async function sendVideo(file) {
     try {
 
         if (videoBtn) {
-            videoBtn.disabled = true;
+
+            videoBtn.disabled =
+                true;
+
         }
 
         const formData =
@@ -1394,7 +1373,7 @@ async function sendVideo(file) {
 
         const data =
             await response.json();
-        
+
         if (!data.secure_url) {
 
             throw new Error(
@@ -1461,16 +1440,22 @@ async function sendVideo(file) {
     } finally {
 
         if (videoBtn) {
-            videoBtn.disabled = false;
+
+            videoBtn.disabled =
+                false;
+
         }
 
         if (videoInput) {
-            videoInput.value = "";
+
+            videoInput.value =
+                "";
+
         }
 
     }
 
-} 
+}
 
 // =====================================
 // رفع الصوت إلى Cloudinary
@@ -1485,10 +1470,14 @@ async function sendAudio(file) {
     try {
 
         if (audioBtn) {
-            audioBtn.disabled = true;
+
+            audioBtn.disabled =
+                true;
+
         }
 
-        const formData = new FormData();
+        const formData =
+            new FormData();
 
         formData.append(
             "file",
@@ -1500,12 +1489,14 @@ async function sendAudio(file) {
             "ml_default"
         );
 
-        const response = await fetch(
-            https://api.cloudinary.com/v1_1/vqwksojr/raw/upload
-                method: "POST",
-                body: formData
-            }
-        );
+        const response =
+            await fetch(
+                "https://api.cloudinary.com/v1_1/vqwksojr/raw/upload",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
 
         if (!response.ok) {
 
@@ -1516,7 +1507,8 @@ async function sendAudio(file) {
 
         }
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         if (!data.secure_url) {
 
@@ -1584,11 +1576,17 @@ async function sendAudio(file) {
     } finally {
 
         if (audioBtn) {
-            audioBtn.disabled = false;
+
+            audioBtn.disabled =
+                false;
+
         }
 
         if (audioInput) {
-            audioInput.value = "";
+
+            audioInput.value =
+                "";
+
         }
 
     }
@@ -1629,9 +1627,7 @@ if (audioInput) {
         }
     );
 
-}
-
-
+                    }
 // =====================================
 // تنظيف Listener
 // =====================================
