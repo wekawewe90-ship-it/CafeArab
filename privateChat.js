@@ -1450,6 +1450,133 @@ async function sendVideo(file) {
 } 
 
 // =====================================
+// رفع الصوت إلى Cloudinary
+// =====================================
+
+async function sendAudio(file) {
+
+    if (!file) return;
+
+    if (!currentUser) return;
+
+    try {
+
+        if (audioBtn) {
+            audioBtn.disabled = true;
+        }
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "file",
+            file
+        );
+
+        formData.append(
+            "upload_preset",
+            "ml_default"
+        );
+
+        const response =
+            await fetch(
+                "https://api.cloudinary.com/v1_1/vqwksojr/raw/upload",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Cloudinary Audio Upload Failed: " +
+                response.status
+            );
+
+        }
+
+        const data =
+            await response.json();
+
+        if (!data.secure_url) {
+
+            throw new Error(
+                "لم يتم الحصول على رابط الصوت."
+            );
+
+        }
+
+        await addDoc(
+            collection(
+                db,
+                "privateChats",
+                roomId,
+                "messages"
+            ),
+            {
+
+                senderId:
+                    currentUser.uid,
+
+                receiverId:
+                    otherUid,
+
+                senderName:
+                    currentUserName,
+
+                type:
+                    "audio",
+
+                audioUrl:
+                    data.secure_url,
+
+                read:
+                    false,
+
+                createdAt:
+                    serverTimestamp()
+
+            }
+        );
+
+        await createNotification(
+            "🎤 " +
+            currentUserName +
+            " أرسل لك مقطع صوتي"
+        );
+
+        alert(
+            "تم إرسال الصوت بنجاح ✅"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Private Audio Error:",
+            error
+        );
+
+        alert(
+            "فشل إرسال الصوت:\n" +
+            error.message
+        );
+
+    } finally {
+
+        if (audioBtn) {
+            audioBtn.disabled = false;
+        }
+
+        if (audioInput) {
+            audioInput.value = "";
+        }
+
+    }
+
+            }
+
+// =====================================
 // تنظيف Listener
 // =====================================
 
