@@ -736,7 +736,36 @@ else if (
 
 }
 
-        
+        // =================================
+// صوت
+// =================================
+
+else if (
+    data.type === "audio" &&
+    data.audioUrl
+) {
+
+    const audio =
+        document.createElement("audio");
+
+    audio.src =
+        data.audioUrl;
+
+    audio.controls =
+        true;
+
+    audio.preload =
+        "metadata";
+
+    audio.style.width =
+        "100%";
+
+    bubble.appendChild(
+        audio
+    );
+
+}
+    
     // =================================
     // نص
     // =================================
