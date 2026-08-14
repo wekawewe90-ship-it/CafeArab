@@ -1509,8 +1509,7 @@ async function sendAudio(file) {
             audioBtn.disabled = true;
         }
 
-        const formData =
-            new FormData();
+        const formData = new FormData();
 
         formData.append(
             "file",
@@ -1522,14 +1521,13 @@ async function sendAudio(file) {
             "ml_default"
         );
 
-        const response =
-            await fetch(
-                "https://api.cloudinary.com/v1_1/vqwksojr/raw/upload",
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
+        const response = await fetch(
+            "https://api.cloudinary.com/vqwksojr/raw/upload",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
 
         if (!response.ok) {
 
@@ -1540,8 +1538,7 @@ async function sendAudio(file) {
 
         }
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
         if (!data.secure_url) {
 
@@ -1605,7 +1602,8 @@ async function sendAudio(file) {
             "فشل إرسال الصوت:\n" +
             error.message
         );
-    } finally { 
+
+    } finally {
 
         if (audioBtn) {
             audioBtn.disabled = false;
@@ -1617,7 +1615,11 @@ async function sendAudio(file) {
 
     }
 
- }
+}
+
+// =====================================
+// اختيار ورفع الصوت
+// =====================================
 
 if (audioInput) {
 
@@ -1641,6 +1643,7 @@ if (audioInput) {
                 audioInput.value = "";
 
                 return;
+
             }
 
             sendAudio(file);
@@ -1649,6 +1652,7 @@ if (audioInput) {
     );
 
 }
+
 
 // =====================================
 // تنظيف Listener
