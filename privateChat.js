@@ -1260,7 +1260,6 @@ if (audioBtn) {
         "click",
         () => {
 
-            alert("زر الصوت اشتغل 🎤");
 
             if (audioInput) {
                 audioInput.click();
