@@ -1605,7 +1605,6 @@ async function sendAudio(file) {
             "فشل إرسال الصوت:\n" +
             error.message
         );
- 
     } finally {
 
         if (audioBtn) {
