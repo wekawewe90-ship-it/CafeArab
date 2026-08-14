@@ -48,6 +48,12 @@ const videoBtn =
 const videoInput =
     document.getElementById("videoInput");
 
+const audioBtn =
+    document.getElementById("audioBtn");
+
+const audioInput =
+    document.getElementById("audioInput");
+
 const chatUser =
     document.getElementById("chatUser");
 
