@@ -1284,8 +1284,6 @@ if (audioInput) {
 
             if (!file) return;
 
-            alert(
-                "تم اختيار ملف صوت 🎤\n" +
                 file.name
             );
 
