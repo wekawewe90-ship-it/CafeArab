@@ -1522,8 +1522,7 @@ async function sendAudio(file) {
         );
 
         const response = await fetch(
-            "https://api.cloudinary.com/vqwksojr/raw/upload",
-            {
+            https://api.cloudinary.com/v1_1/vqwksojr/raw/upload
                 method: "POST",
                 body: formData
             }
