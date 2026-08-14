@@ -745,11 +745,22 @@ else if (
     data.audioUrl
 ) {
 
+    const title =
+        document.createElement("div");
+
+    title.textContent =
+        "🎤 مقطع صوتي";
+
+    title.style.marginBottom =
+        "6px";
+
+    title.style.fontWeight =
+        "bold";
+
+    bubble.appendChild(title);
+
     const audio =
         document.createElement("audio");
-
-    audio.src =
-        data.audioUrl;
 
     audio.controls =
         true;
@@ -757,12 +768,19 @@ else if (
     audio.preload =
         "metadata";
 
+    audio.src =
+        data.audioUrl;
+
+    audio.style.display =
+        "block";
+
     audio.style.width =
+        "250px";
+
+    audio.style.maxWidth =
         "100%";
 
-    bubble.appendChild(
-        audio
-    );
+    bubble.appendChild(audio);
 
 }
     
