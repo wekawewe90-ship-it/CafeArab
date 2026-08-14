@@ -736,7 +736,7 @@ else if (
 
 }
 
-        // =================================
+// =================================
 // صوت
 // =================================
 
@@ -1618,7 +1618,8 @@ async function sendAudio(file) {
 
     }
 
-            }
+ }
+
 if (audioInput) {
 
     audioInput.addEventListener(
