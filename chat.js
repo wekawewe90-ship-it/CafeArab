@@ -13,7 +13,8 @@ import {
     onSnapshot,
     serverTimestamp, 
     doc,
-    getDoc 
+    getDoc, 
+    setDoc 
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -235,8 +236,51 @@ onAuthStateChanged(
             currentUserCountry =
                 guestData.country ||
                 "";
+// =================================
+// تسجيل الضيف في لوحة الإدارة
+// =================================
 
-} else {
+try {
+
+    await setDoc(
+        doc(
+            db,
+            "users",
+            user.uid
+        ),
+        {
+
+            name:
+                guestData.name ||
+                "ضيف",
+
+            country:
+                guestData.country ||
+                "",
+
+            isGuest:
+                true,
+
+            online:
+                true,
+
+            lastSeen:
+                serverTimestamp()
+
+        },
+        {
+            merge: true
+        }
+    );
+
+} catch (error) {
+
+    console.error(
+        "Guest Profile Save Error:",
+        error
+    );
+
+}
 
     // =================================
     // عضو مسجل
