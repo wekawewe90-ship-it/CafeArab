@@ -1,5 +1,5 @@
 // =====================================
-// Cafe Arab Chat V3
+// Cafe Arab Chat
 // Registered Users + Guest Users
 // Admin Warning + Ban
 // Notifications Receiver
@@ -100,12 +100,11 @@ function isAdmin() {
     return ADMIN_UIDS.includes(
         currentUser.uid
     );
-
 }
 
 
 // =====================================
-// الحصول على بيانات الضيف
+// بيانات الضيف
 // =====================================
 
 function getGuestData() {
@@ -137,14 +136,12 @@ function getGuestData() {
     } catch (error) {
 
         console.error(
-            "Guest data error:",
+            "Guest Data Error:",
             error
         );
 
         return null;
-
     }
-
 }
 
 
@@ -160,12 +157,119 @@ function updateUserName() {
 
     userName.textContent =
         "👤 " + currentUserName;
-
 }
 
 
 // =====================================
-// التحقق من تسجيل الدخول
+// إخراج المستخدم
+// =====================================
+
+async function logoutUser(
+    removeGuestData = false
+) {
+
+    try {
+
+        if (messagesUnsubscribe) {
+            messagesUnsubscribe();
+            messagesUnsubscribe = null;
+        }
+
+        if (notificationsUnsubscribe) {
+            notificationsUnsubscribe();
+            notificationsUnsubscribe = null;
+        }
+
+        await signOut(auth);
+
+        if (
+            removeGuestData
+        ) {
+
+            sessionStorage.removeItem(
+                "cafeArabGuest"
+            );
+
+        }
+
+        window.location.href =
+            "login.html";
+
+    } catch (error) {
+
+        console.error(
+            "Logout User Error:",
+            error
+        );
+
+        window.location.href =
+            "login.html";
+    }
+}
+
+
+// =====================================
+// التحقق من حظر العضو / الضيف
+// =====================================
+
+async function checkBanStatus(user) {
+
+    if (!user) {
+        return false;
+    }
+
+    try {
+
+        const userRef =
+            doc(
+                db,
+                "users",
+                user.uid
+            );
+
+        const userSnapshot =
+            await getDoc(
+                userRef
+            );
+
+        if (
+            userSnapshot.exists()
+        ) {
+
+            const userData =
+                userSnapshot.data();
+
+            if (
+                userData.banned === true
+            ) {
+
+                alert(
+                    "🚫 حسابك محظور.\n\n" +
+                    "لا يمكنك استخدام Cafe Arab حاليًا."
+                );
+
+                await logoutUser(
+                    user.isAnonymous === true
+                );
+
+                return true;
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Ban Check Error:",
+            error
+        );
+    }
+
+    return false;
+}
+
+
+// =====================================
+// تسجيل الدخول والتحضير
 // =====================================
 
 onAuthStateChanged(
@@ -194,26 +298,23 @@ onAuthStateChanged(
                 } catch (error) {
 
                     console.error(
-                        "Anonymous login error:",
+                        "Anonymous Login Error:",
                         error
                     );
 
                     alert(
-                        "تعذر دخول الضيف. تأكد أن Anonymous Authentication مفعلة في Firebase."
+                        "تعذر دخول الضيف.\n\n" +
+                        "تأكد أن Anonymous Authentication مفعلة في Firebase."
                     );
 
                     return;
-
                 }
-
             }
-
 
             window.location.href =
                 "login.html";
 
             return;
-
         }
 
 
@@ -223,11 +324,6 @@ onAuthStateChanged(
 
         currentUser =
             user;
-
-
-        // =================================
-        // هل هو ضيف؟
-        // =================================
 
         isGuest =
             user.isAnonymous === true;
@@ -239,138 +335,45 @@ onAuthStateChanged(
 
         if (isGuest) {
 
-    const guestData =
-        getGuestData();
+            const guestData =
+                getGuestData();
 
-    if (!guestData) {
+            if (!guestData) {
 
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error(error);
-        }
-
-        window.location.href =
-            "login.html";
-
-        return;
-    }
-
-
-    currentUserName =
-        guestData.name ||
-        "ضيف";
-
-    currentUserCountry =
-        guestData.country ||
-        "";
-
-
-    // =================================
-    // فحص حظر الضيف
-    // =================================
-
-    try {
-
-        const guestDoc =
-            await getDoc(
-                doc(
-                    db,
-                    "users",
-                    user.uid
-                )
-            );
-
-        if (
-            guestDoc.exists() &&
-            guestDoc.data().banned === true
-        ) {
-
-            alert(
-                "🚫 تم حظرك من الموقع.\n\n" +
-                "لا يمكنك استخدام Cafe Arab حاليًا."
-            );
-
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error(
-                    "Guest Ban Logout Error:",
-                    error
+                await logoutUser(
+                    true
                 );
+
+                return;
             }
 
-            sessionStorage.removeItem(
-                "cafeArabGuest"
-            );
 
-            window.location.href =
-                "login.html";
+            // =============================
+            // فحص الحظر قبل تحديث بياناته
+            // =============================
 
-            return;
-        }
+            const banned =
+                await checkBanStatus(
+                    user
+                );
 
-    } catch (error) {
-
-        console.error(
-            "Guest Ban Check Error:",
-            error
-        );
-
-    }
-
-
-    // =================================
-    // تسجيل / تحديث الضيف
-    // =================================
-
-    try {
-
-        await setDoc(
-            doc(
-                db,
-                "users",
-                user.uid
-            ),
-            {
-
-                name:
-                    guestData.name ||
-                    "ضيف",
-
-                country:
-                    guestData.country ||
-                    "",
-
-                isGuest:
-                    true,
-
-                online:
-                    true,
-
-                lastSeen:
-                    serverTimestamp()
-
-            },
-            {
-                merge: true
+            if (banned) {
+                return;
             }
-        );
 
-    } catch (error) {
 
-        console.error(
-            "Guest Profile Save Error:",
-            error
-        );
+            currentUserName =
+                guestData.name ||
+                "ضيف";
 
-    }
+            currentUserCountry =
+                guestData.country ||
+                "";
 
-        }
 
-            // =================================
-            // تسجيل الضيف في لوحة الإدارة
-            // =================================
+            // =============================
+            // تسجيل الضيف في users
+            // =============================
 
             try {
 
@@ -383,12 +386,10 @@ onAuthStateChanged(
                     {
 
                         name:
-                            guestData.name ||
-                            "ضيف",
+                            currentUserName,
 
                         country:
-                            guestData.country ||
-                            "",
+                            currentUserCountry,
 
                         isGuest:
                             true,
@@ -411,7 +412,6 @@ onAuthStateChanged(
                     "Guest Profile Save Error:",
                     error
                 );
-
             }
 
 
@@ -423,7 +423,7 @@ onAuthStateChanged(
 
             try {
 
-                const userDoc =
+                const userSnapshot =
                     await getDoc(
                         doc(
                             db,
@@ -432,15 +432,16 @@ onAuthStateChanged(
                         )
                     );
 
-
-                if (userDoc.exists()) {
+                if (
+                    userSnapshot.exists()
+                ) {
 
                     const userData =
-                        userDoc.data();
+                        userSnapshot.data();
 
 
                     // =============================
-                    // التحقق من الحظر
+                    // فحص الحظر
                     // =============================
 
                     if (
@@ -449,20 +450,14 @@ onAuthStateChanged(
 
                         alert(
                             "🚫 حسابك محظور.\n\n" +
-                            "لا يمكنك استخدام الموقع حاليًا."
+                            "لا يمكنك استخدام Cafe Arab حاليًا."
                         );
 
-
-                        await signOut(
-                            auth
+                        await logoutUser(
+                            false
                         );
-
-
-                        window.location.href =
-                            "login.html";
 
                         return;
-
                     }
 
 
@@ -471,7 +466,6 @@ onAuthStateChanged(
                         userData.username ||
                         user.displayName ||
                         "مستخدم";
-
 
                     currentUserCountry =
                         userData.country ||
@@ -482,24 +476,19 @@ onAuthStateChanged(
                     currentUserName =
                         user.displayName ||
                         "مستخدم";
-
                 }
-
 
             } catch (error) {
 
                 console.error(
-                    "Error loading user profile:",
+                    "Load User Profile Error:",
                     error
                 );
-
 
                 currentUserName =
                     user.displayName ||
                     "مستخدم";
-
             }
-
         }
 
 
@@ -518,7 +507,7 @@ onAuthStateChanged(
 
 
         // =================================
-        // تشغيل استقبال الإشعارات
+        // تشغيل الإشعارات
         // =================================
 
         startNotifications();
@@ -550,16 +539,17 @@ function startNotifications() {
 
 
     // =================================
-    // إلغاء Listener قديم
+    // إلغاء Listener القديم
     // =================================
 
-    if (notificationsUnsubscribe) {
+    if (
+        notificationsUnsubscribe
+    ) {
 
         notificationsUnsubscribe();
 
         notificationsUnsubscribe =
             null;
-
     }
 
 
@@ -591,17 +581,12 @@ function startNotifications() {
                     .forEach(
                         (change) => {
 
-                            // =========================
-                            // نهتم بالإشعار الجديد فقط
-                            // =========================
-
                             if (
                                 change.type !==
                                 "added"
                             ) {
 
                                 return;
-
                             }
 
 
@@ -609,22 +594,13 @@ function startNotifications() {
                                 change.doc.data();
 
 
-                            // =========================
-                            // لا نكرر إشعار مقروء
-                            // =========================
-
                             if (
                                 data.read === true
                             ) {
 
                                 return;
-
                             }
 
-
-                            // =========================
-                            // عرض الإشعار
-                            // =========================
 
                             showNotification(
                                 data
@@ -634,7 +610,6 @@ function startNotifications() {
                     );
 
             },
-
             (error) => {
 
                 console.error(
@@ -649,23 +624,31 @@ function startNotifications() {
 
 
 // =====================================
-// عرض الإشعار للمستخدم
+// عرض الإشعار
 // =====================================
 
-function showNotification(data) {
+function showNotification(
+    data
+) {
 
     const title =
         data.title ||
         "🔔 إشعار جديد";
 
 
-    const message =
-    data.message ||
-    data.text ||
-    "لديك إشعار جديد من إدارة Cafe Arab.";
-    
     // =================================
-    // لو حظر
+    // منع undefined
+    // =================================
+
+    const message =
+        data.message ||
+        data.text ||
+        data.body ||
+        "لديك إشعار جديد من إدارة Cafe Arab.";
+
+
+    // =================================
+    // حظر
     // =================================
 
     if (
@@ -681,61 +664,48 @@ function showNotification(data) {
         );
 
 
-        // =================================
-        // تسجيل الخروج بعد الحظر
-        // =================================
+        setTimeout(
+            async () => {
 
-        if (
-            currentUser &&
-            data.type === "admin_ban"
-        ) {
+                await logoutUser(
+                    isGuest
+                );
 
-            setTimeout(
-                async () => {
+            },
+            500
+        );
 
-                    try {
-
-                        await signOut(
-                            auth
-                        );
-
-                        if (isGuest) {
-
-                            sessionStorage.removeItem(
-                                "cafeArabGuest"
-                            );
-
-                        }
-
-                        window.location.href =
-                            "login.html";
-
-                    } catch (error) {
-
-                        console.error(
-                            "Ban Logout Error:",
-                            error
-                        );
-
-                    }
-
-                },
-                1000
-            );
-
-        }
 
         return;
-
     }
 
 
     // =================================
-    // تنبيه عادي من الإدارة
+    // تنبيه
+    // =================================
+
+    if (
+        data.type ===
+        "admin_warning"
+    ) {
+
+        alert(
+            "⚠️ " +
+            title +
+            "\n\n" +
+            message
+        );
+
+        return;
+    }
+
+
+    // =================================
+    // أي إشعار آخر
     // =================================
 
     alert(
-        "⚠️ " +
+        "🔔 " +
         title +
         "\n\n" +
         message
@@ -745,7 +715,7 @@ function showNotification(data) {
 
 
 // =====================================
-// تسجيل الخروج
+// تسجيل الخروج اليدوي
 // =====================================
 
 if (logoutBtn) {
@@ -754,37 +724,9 @@ if (logoutBtn) {
         "click",
         async () => {
 
-            try {
-
-                await signOut(
-                    auth
-                );
-
-
-                if (isGuest) {
-
-                    sessionStorage.removeItem(
-                        "cafeArabGuest"
-                    );
-
-                }
-
-
-                window.location.href =
-                    "login.html";
-
-            } catch (error) {
-
-                console.error(
-                    "Logout error:",
-                    error
-                );
-
-                alert(
-                    "حدث خطأ أثناء تسجيل الخروج."
-                );
-
-            }
+            await logoutUser(
+                isGuest
+            );
 
         }
     );
@@ -803,9 +745,7 @@ if (imageBtn) {
         () => {
 
             if (imageInput) {
-
                 imageInput.click();
-
             }
 
         }
@@ -868,7 +808,6 @@ async function sendMessage() {
         );
 
         return;
-
     }
 
 
@@ -889,10 +828,8 @@ async function sendMessage() {
     try {
 
         if (sendBtn) {
-
             sendBtn.disabled =
                 true;
-
         }
 
 
@@ -933,11 +870,10 @@ async function sendMessage() {
 
         messageInput.focus();
 
-
     } catch (error) {
 
         console.error(
-            "Send message error:",
+            "Send Message Error:",
             error
         );
 
@@ -948,10 +884,8 @@ async function sendMessage() {
     } finally {
 
         if (sendBtn) {
-
             sendBtn.disabled =
                 false;
-
         }
 
     }
@@ -982,7 +916,6 @@ async function uploadImage() {
         );
 
         return;
-
     }
 
 
@@ -992,13 +925,16 @@ async function uploadImage() {
     ) {
 
         return;
-
     }
 
 
     const file =
         imageInput.files[0];
 
+
+    // =================================
+    // التأكد أنها صورة
+    // =================================
 
     if (
         !file.type.startsWith(
@@ -1014,17 +950,14 @@ async function uploadImage() {
             "";
 
         return;
-
     }
 
 
     try {
 
         if (imageBtn) {
-
             imageBtn.disabled =
                 true;
-
         }
 
 
@@ -1062,7 +995,6 @@ async function uploadImage() {
             throw new Error(
                 "Cloudinary upload failed"
             );
-
         }
 
 
@@ -1075,7 +1007,6 @@ async function uploadImage() {
             throw new Error(
                 "No secure URL returned"
             );
-
         }
 
 
@@ -1114,11 +1045,10 @@ async function uploadImage() {
         imageInput.value =
             "";
 
-
     } catch (error) {
 
         console.error(
-            "Upload image error:",
+            "Upload Image Error:",
             error
         );
 
@@ -1129,17 +1059,13 @@ async function uploadImage() {
     } finally {
 
         if (imageBtn) {
-
             imageBtn.disabled =
                 false;
-
         }
 
         if (imageInput) {
-
             imageInput.value =
                 "";
-
         }
 
     }
@@ -1160,11 +1086,10 @@ function loadMessages() {
         );
 
         return;
-
     }
 
 
-    const q =
+    const messagesQuery =
         query(
             collection(
                 db,
@@ -1177,7 +1102,9 @@ function loadMessages() {
         );
 
 
-    if (messagesUnsubscribe) {
+    if (
+        messagesUnsubscribe
+    ) {
 
         messagesUnsubscribe();
 
@@ -1186,7 +1113,7 @@ function loadMessages() {
 
     messagesUnsubscribe =
         onSnapshot(
-            q,
+            messagesQuery,
             (snapshot) => {
 
                 messages.innerHTML =
@@ -1210,6 +1137,10 @@ function loadMessages() {
                             "message";
 
 
+                        // =========================
+                        // تحديد رسالتي
+                        // =========================
+
                         if (
                             currentUser &&
                             data.uid ===
@@ -1229,9 +1160,9 @@ function loadMessages() {
                         }
 
 
-                        // =================================
+                        // =========================
                         // اسم المرسل
-                        // =================================
+                        // =========================
 
                         const sender =
                             document.createElement(
@@ -1248,9 +1179,9 @@ function loadMessages() {
                             "مستخدم";
 
 
-                        // =================================
-                        // الضغط على اسم المستخدم
-                        // =================================
+                        // =========================
+                        // الضغط على الاسم
+                        // =========================
 
                         if (
                             data.uid &&
@@ -1278,7 +1209,6 @@ function loadMessages() {
 
                                         event.stopPropagation();
 
-
                                         showAdminMenu(
                                             event,
                                             data.uid,
@@ -1288,7 +1218,6 @@ function loadMessages() {
 
                                     }
                                 );
-
 
                             } else {
 
@@ -1319,9 +1248,9 @@ function loadMessages() {
                         );
 
 
-                        // =================================
+                        // =========================
                         // رسالة نصية
-                        // =================================
+                        // =========================
 
                         if (
                             data.type ===
@@ -1350,9 +1279,9 @@ function loadMessages() {
                         }
 
 
-                        // =================================
+                        // =========================
                         // صورة
-                        // =================================
+                        // =========================
 
                         if (
                             data.type ===
@@ -1417,11 +1346,10 @@ function loadMessages() {
                 scrollBottom();
 
             },
-
             (error) => {
 
                 console.error(
-                    "Messages listener error:",
+                    "Messages Listener Error:",
                     error
                 );
 
@@ -1445,15 +1373,17 @@ function showAdminMenu(
     name
 ) {
 
+    // =================================
+    // إزالة أي قائمة قديمة
+    // =================================
+
     const oldMenu =
         document.getElementById(
             "adminUserMenu"
         );
 
     if (oldMenu) {
-
         oldMenu.remove();
-
     }
 
 
@@ -1466,6 +1396,10 @@ function showAdminMenu(
     menu.id =
         "adminUserMenu";
 
+
+    // =================================
+    // شكل القائمة
+    // =================================
 
     menu.style.position =
         "fixed";
@@ -1486,11 +1420,15 @@ function showAdminMenu(
         "8px";
 
     menu.style.minWidth =
-        "180px";
+        "190px";
 
     menu.style.boxShadow =
         "0 5px 25px rgba(0,0,0,.20)";
 
+
+    // =================================
+    // اسم المستخدم
+    // =================================
 
     const title =
         document.createElement(
@@ -1550,8 +1488,20 @@ function showAdminMenu(
     warningBtn.style.color =
         "#664d03";
 
+    warningBtn.style.border =
+        "0";
+
+    warningBtn.style.borderRadius =
+        "8px";
+
+    warningBtn.style.padding =
+        "10px";
+
     warningBtn.style.marginBottom =
         "5px";
+
+    warningBtn.style.cursor =
+        "pointer";
 
 
     warningBtn.addEventListener(
@@ -1604,6 +1554,18 @@ function showAdminMenu(
     banBtn.style.color =
         "#fff";
 
+    banBtn.style.border =
+        "0";
+
+    banBtn.style.borderRadius =
+        "8px";
+
+    banBtn.style.padding =
+        "10px";
+
+    banBtn.style.cursor =
+        "pointer";
+
 
     banBtn.addEventListener(
         "click",
@@ -1626,7 +1588,7 @@ function showAdminMenu(
 
 
     // =================================
-    // إلغاء
+    // زر الإلغاء
     // =================================
 
     const cancelBtn =
@@ -1655,8 +1617,20 @@ function showAdminMenu(
     cancelBtn.style.color =
         "#333";
 
+    cancelBtn.style.border =
+        "0";
+
+    cancelBtn.style.borderRadius =
+        "8px";
+
+    cancelBtn.style.padding =
+        "10px";
+
     cancelBtn.style.marginTop =
         "5px";
+
+    cancelBtn.style.cursor =
+        "pointer";
 
 
     cancelBtn.addEventListener(
@@ -1679,6 +1653,10 @@ function showAdminMenu(
     );
 
 
+    // =================================
+    // تحديد مكان القائمة
+    // =================================
+
     let left =
         event.clientX;
 
@@ -1687,10 +1665,10 @@ function showAdminMenu(
 
 
     const menuWidth =
-        180;
+        190;
 
     const menuHeight =
-        150;
+        160;
 
 
     if (
@@ -1733,23 +1711,29 @@ function showAdminMenu(
         ) + "px";
 
 
+    // =================================
+    // إغلاق عند الضغط خارجها
+    // =================================
+
     setTimeout(
         () => {
 
             document.addEventListener(
                 "click",
-                function closeMenu(e) {
+                function closeAdminMenu(e) {
 
                     if (
                         menu &&
-                        !menu.contains(e.target)
+                        !menu.contains(
+                            e.target
+                        )
                     ) {
 
                         menu.remove();
 
                         document.removeEventListener(
                             "click",
-                            closeMenu
+                            closeAdminMenu
                         );
 
                     }
@@ -1773,6 +1757,12 @@ async function sendAdminWarning(
     name
 ) {
 
+    if (!isAdmin()) {
+
+        return;
+    }
+
+
     try {
 
         await addDoc(
@@ -1788,7 +1778,7 @@ async function sendAdminWarning(
                     "admin_warning",
 
                 title:
-                    "⚠️ تنبيه من الإدارة",
+                    "تنبيه من الإدارة",
 
                 message:
                     "تم إرسال تنبيه لك من إدارة Cafe Arab.",
@@ -1807,10 +1797,9 @@ async function sendAdminWarning(
 
 
         alert(
-            "⚠️ تم إرسال تنبيه إلى " +
+            "⚠️ تم إرسال التنبيه إلى " +
             name
         );
-
 
     } catch (error) {
 
@@ -1819,9 +1808,8 @@ async function sendAdminWarning(
             error
         );
 
-
         alert(
-            "❌ تعذر إرسال التنبيه.\n" +
+            "❌ تعذر إرسال التنبيه.\n\n" +
             error.message
         );
 
@@ -1839,6 +1827,25 @@ async function banUser(
     name
 ) {
 
+    if (!isAdmin()) {
+
+        return;
+    }
+
+
+    if (
+        uid ===
+        currentUser.uid
+    ) {
+
+        alert(
+            "❌ لا يمكنك حظر نفسك."
+        );
+
+        return;
+    }
+
+
     const confirmed =
         confirm(
             "🚫 هل أنت متأكد من حظر:\n\n" +
@@ -1848,16 +1855,17 @@ async function banUser(
 
 
     if (!confirmed) {
-
         return;
-
     }
 
 
     try {
 
         // =================================
-        // تسجيل الحظر
+        // حفظ الحظر
+        // =================================
+        // مهم:
+        // لا نغير isGuest هنا
         // =================================
 
         await setDoc(
@@ -1875,10 +1883,7 @@ async function banUser(
                     serverTimestamp(),
 
                 bannedBy:
-                    currentUser.uid,
-
-                isGuest:
-                    false
+                    currentUser.uid
 
             },
             {
@@ -1891,46 +1896,35 @@ async function banUser(
         // إرسال إشعار الحظر
         // =================================
 
-        try {
+        await addDoc(
+            collection(
+                db,
+                "notifications",
+                uid,
+                "items"
+            ),
+            {
 
-            await addDoc(
-                collection(
-                    db,
-                    "notifications",
-                    uid,
-                    "items"
-                ),
-                {
+                type:
+                    "admin_ban",
 
-                    type:
-                        "admin_ban",
+                title:
+                    "تم حظرك",
 
-                    title:
-                        "🚫 تم حظرك",
+                message:
+                    "تم حظر حسابك من إدارة Cafe Arab.",
 
-                    message:
-                        "تم حظر حسابك من إدارة Cafe Arab.",
+                fromAdmin:
+                    true,
 
-                    fromAdmin:
-                        true,
+                read:
+                    false,
 
-                    read:
-                        false,
+                createdAt:
+                    serverTimestamp()
 
-                    createdAt:
-                        serverTimestamp()
-
-                }
-            );
-
-        } catch (notificationError) {
-
-            console.error(
-                "Ban Notification Error:",
-                notificationError
-            );
-
-        }
+            }
+        );
 
 
         alert(
@@ -1947,7 +1941,6 @@ async function banUser(
             error
         );
 
-
         alert(
             "❌ تعذر حظر المستخدم.\n\n" +
             error.message
@@ -1963,12 +1956,13 @@ async function banUser(
 // =====================================
 
 window.openPrivateChat =
-    function(uid, name) {
+    function(
+        uid,
+        name
+    ) {
 
         if (!currentUser) {
-
             return;
-
         }
 
 
@@ -1978,16 +1972,18 @@ window.openPrivateChat =
         ) {
 
             return;
-
         }
 
 
         window.location.href =
             "private-chat.html?uid=" +
-            encodeURIComponent(uid) +
+            encodeURIComponent(
+                uid
+            ) +
             "&name=" +
             encodeURIComponent(
-                name || "مستخدم"
+                name ||
+                "مستخدم"
             );
 
     };
@@ -2019,9 +2015,7 @@ if (usersBtn) {
 function scrollBottom() {
 
     if (!messages) {
-
         return;
-
     }
 
 
@@ -2039,14 +2033,18 @@ window.addEventListener(
     "beforeunload",
     () => {
 
-        if (messagesUnsubscribe) {
+        if (
+            messagesUnsubscribe
+        ) {
 
             messagesUnsubscribe();
 
         }
 
 
-        if (notificationsUnsubscribe) {
+        if (
+            notificationsUnsubscribe
+        ) {
 
             notificationsUnsubscribe();
 
@@ -2061,5 +2059,5 @@ window.addEventListener(
 // =====================================
 
 console.log(
-    "✅ Cafe Arab Chat - Notifications Receiver Ready"
-); 
+    "✅ Cafe Arab Chat - Clean Version Loaded"
+);
