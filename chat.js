@@ -1,6 +1,7 @@
 // =====================================
 // Cafe Arab Chat V3
 // Registered Users + Guest Users
+// Admin Warning + Ban
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -11,10 +12,10 @@ import {
     query,
     orderBy,
     onSnapshot,
-    serverTimestamp, 
+    serverTimestamp,
     doc,
-    getDoc, 
-    setDoc 
+    getDoc,
+    setDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -22,6 +23,15 @@ import {
     signOut,
     signInAnonymously
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+
+// =====================================
+// UID المدير
+// =====================================
+
+const ADMIN_UIDS = [
+    "dokedbcqRSgR4ZAbI50IAgm8St32"
+];
 
 
 // =====================================
@@ -75,6 +85,23 @@ let messagesUnsubscribe = null;
 
 
 // =====================================
+// التحقق هل المستخدم أدمن
+// =====================================
+
+function isAdmin() {
+
+    if (!currentUser) {
+        return false;
+    }
+
+    return ADMIN_UIDS.includes(
+        currentUser.uid
+    );
+
+}
+
+
+// =====================================
 // الحصول على بيانات الضيف
 // =====================================
 
@@ -112,7 +139,9 @@ function getGuestData() {
         );
 
         return null;
+
     }
+
 }
 
 
@@ -128,6 +157,7 @@ function updateUserName() {
 
     userName.textContent =
         "👤 " + currentUserName;
+
 }
 
 
@@ -174,7 +204,9 @@ onAuthStateChanged(
                     );
 
                     return;
+
                 }
+
             }
 
 
@@ -186,6 +218,7 @@ onAuthStateChanged(
                 "login.html";
 
             return;
+
         }
 
 
@@ -217,15 +250,20 @@ onAuthStateChanged(
             if (!guestData) {
 
                 try {
+
                     await signOut(auth);
+
                 } catch (error) {
+
                     console.error(error);
+
                 }
 
                 window.location.href =
                     "login.html";
 
                 return;
+
             }
 
 
@@ -236,114 +274,142 @@ onAuthStateChanged(
             currentUserCountry =
                 guestData.country ||
                 "";
-// =================================
-// تسجيل الضيف في لوحة الإدارة
-// =================================
 
-try {
 
-    await setDoc(
-        doc(
-            db,
-            "users",
-            user.uid
-        ),
-        {
+            // =================================
+            // تسجيل الضيف في لوحة الإدارة
+            // =================================
 
-            name:
-                guestData.name ||
-                "ضيف",
+            try {
 
-            country:
-                guestData.country ||
-                "",
+                await setDoc(
+                    doc(
+                        db,
+                        "users",
+                        user.uid
+                    ),
+                    {
 
-            isGuest:
-                true,
+                        name:
+                            guestData.name ||
+                            "ضيف",
 
-            online:
-                true,
+                        country:
+                            guestData.country ||
+                            "",
 
-            lastSeen:
-                serverTimestamp()
+                        isGuest:
+                            true,
 
-        },
-        {
-            merge: true
-        }
-    );
+                        online:
+                            true,
 
-} catch (error) {
+                        lastSeen:
+                            serverTimestamp()
 
-    console.error(
-        "Guest Profile Save Error:",
-        error
-    );
+                    },
+                    {
+                        merge: true
+                    }
+                );
 
-}
+            } catch (error) {
 
-    // =================================
-    // عضو مسجل
-    // =================================
+                console.error(
+                    "Guest Profile Save Error:",
+                    error
+                );
 
-    try {
+            }
 
-        const userDoc = await getDoc(
-            doc(db, "users", user.uid)
-        );
-
-        if (userDoc.exists()) {
-
-            const userData =
-                userDoc.data();
-            if (userData.banned === true) {
-
-    alert(
-        "🚫 حسابك محظور.\n\n" +
-        "لا يمكنك استخدام الموقع حاليًا."
-    );
-
-    await signOut(auth);
-
-    window.location.href =
-        "login.html";
-
-    return;
-        }
-
-            currentUserName =
-                userData.name ||
-                userData.username ||
-                user.displayName ||
-                "مستخدم";
-
-            currentUserCountry =
-                userData.country ||
-                "";
 
         } else {
 
-            currentUserName =
-                user.displayName ||
-                "مستخدم";
+            // =================================
+            // عضو مسجل
+            // =================================
+
+            try {
+
+                const userDoc =
+                    await getDoc(
+                        doc(
+                            db,
+                            "users",
+                            user.uid
+                        )
+                    );
+
+
+                if (userDoc.exists()) {
+
+                    const userData =
+                        userDoc.data();
+
+
+                    // =============================
+                    // التحقق من الحظر
+                    // =============================
+
+                    if (
+                        userData.banned === true
+                    ) {
+
+                        alert(
+                            "🚫 حسابك محظور.\n\n" +
+                            "لا يمكنك استخدام الموقع حاليًا."
+                        );
+
+
+                        await signOut(
+                            auth
+                        );
+
+
+                        window.location.href =
+                            "login.html";
+
+                        return;
+
+                    }
+
+
+                    currentUserName =
+                        userData.name ||
+                        userData.username ||
+                        user.displayName ||
+                        "مستخدم";
+
+
+                    currentUserCountry =
+                        userData.country ||
+                        "";
+
+                } else {
+
+                    currentUserName =
+                        user.displayName ||
+                        "مستخدم";
+
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                    "Error loading user profile:",
+                    error
+                );
+
+
+                currentUserName =
+                    user.displayName ||
+                    "مستخدم";
+
+            }
 
         }
 
-    } catch (error) {
-
-        console.error(
-            "Error loading user profile:",
-            error
-        );
-
-        currentUserName =
-            user.displayName ||
-            "مستخدم";
-
-    }
-
-        }
-            
 
         // =================================
         // عرض الاسم
@@ -385,12 +451,10 @@ if (logoutBtn) {
 
             try {
 
-                await signOut(auth);
+                await signOut(
+                    auth
+                );
 
-
-                // =========================
-                // لو ضيف
-                // =========================
 
                 if (isGuest) {
 
@@ -434,7 +498,9 @@ if (imageBtn) {
         () => {
 
             if (imageInput) {
+
                 imageInput.click();
+
             }
 
         }
@@ -497,6 +563,7 @@ async function sendMessage() {
         );
 
         return;
+
     }
 
 
@@ -517,7 +584,10 @@ async function sendMessage() {
     try {
 
         if (sendBtn) {
-            sendBtn.disabled = true;
+
+            sendBtn.disabled =
+                true;
+
         }
 
 
@@ -573,7 +643,10 @@ async function sendMessage() {
     } finally {
 
         if (sendBtn) {
-            sendBtn.disabled = false;
+
+            sendBtn.disabled =
+                false;
+
         }
 
     }
@@ -604,6 +677,7 @@ async function uploadImage() {
         );
 
         return;
+
     }
 
 
@@ -613,16 +687,13 @@ async function uploadImage() {
     ) {
 
         return;
+
     }
 
 
     const file =
         imageInput.files[0];
 
-
-    // =================================
-    // التأكد أنها صورة
-    // =================================
 
     if (
         !file.type.startsWith(
@@ -638,13 +709,17 @@ async function uploadImage() {
             "";
 
         return;
+
     }
 
 
     try {
 
         if (imageBtn) {
-            imageBtn.disabled = true;
+
+            imageBtn.disabled =
+                true;
+
         }
 
 
@@ -682,6 +757,7 @@ async function uploadImage() {
             throw new Error(
                 "Cloudinary upload failed"
             );
+
         }
 
 
@@ -694,6 +770,7 @@ async function uploadImage() {
             throw new Error(
                 "No secure URL returned"
             );
+
         }
 
 
@@ -747,11 +824,17 @@ async function uploadImage() {
     } finally {
 
         if (imageBtn) {
-            imageBtn.disabled = false;
+
+            imageBtn.disabled =
+                false;
+
         }
 
         if (imageInput) {
-            imageInput.value = "";
+
+            imageInput.value =
+                "";
+
         }
 
     }
@@ -772,6 +855,7 @@ function loadMessages() {
         );
 
         return;
+
     }
 
 
@@ -789,7 +873,9 @@ function loadMessages() {
 
 
     if (messagesUnsubscribe) {
+
         messagesUnsubscribe();
+
     }
 
 
@@ -819,10 +905,6 @@ function loadMessages() {
                             "message";
 
 
-                        // =========================
-                        // تحديد رسالتي
-                        // =========================
-
                         if (
                             currentUser &&
                             data.uid ===
@@ -842,9 +924,9 @@ function loadMessages() {
                         }
 
 
-                        // =========================
+                        // =================================
                         // اسم المرسل
-                        // =========================
+                        // =================================
 
                         const sender =
                             document.createElement(
@@ -861,9 +943,9 @@ function loadMessages() {
                             "مستخدم";
 
 
-                        // =========================
-                        // الضغط على اسم الشخص
-                        // =========================
+                        // =================================
+                        // الضغط على اسم المستخدم
+                        // =================================
 
                         if (
                             data.uid &&
@@ -878,22 +960,59 @@ function loadMessages() {
                             sender.style.textDecoration =
                                 "underline";
 
-                            sender.title =
-                                "فتح محادثة خاصة";
+
+                            // =================================
+                            // لو أدمن
+                            // =================================
+
+                            if (isAdmin()) {
+
+                                sender.title =
+                                    "خيارات الإدارة";
 
 
-                            sender.addEventListener(
-                                "click",
-                                () => {
+                                sender.addEventListener(
+                                    "click",
+                                    (event) => {
 
-                                    openPrivateChat(
-                                        data.uid,
-                                        data.user ||
-                                        "مستخدم"
-                                    );
+                                        event.stopPropagation();
 
-                                }
-                            );
+
+                                        showAdminMenu(
+                                            event,
+                                            data.uid,
+                                            data.user ||
+                                            "مستخدم"
+                                        );
+
+                                    }
+                                );
+
+
+                            } else {
+
+                                // =================================
+                                // مستخدم عادي
+                                // =================================
+
+                                sender.title =
+                                    "فتح محادثة خاصة";
+
+
+                                sender.addEventListener(
+                                    "click",
+                                    () => {
+
+                                        openPrivateChat(
+                                            data.uid,
+                                            data.user ||
+                                            "مستخدم"
+                                        );
+
+                                    }
+                                );
+
+                            }
 
                         }
 
@@ -903,9 +1022,9 @@ function loadMessages() {
                         );
 
 
-                        // =========================
+                        // =================================
                         // رسالة نصية
-                        // =========================
+                        // =================================
 
                         if (
                             data.type ===
@@ -934,9 +1053,9 @@ function loadMessages() {
                         }
 
 
-                        // =========================
+                        // =================================
                         // صورة
-                        // =========================
+                        // =================================
 
                         if (
                             data.type ===
@@ -1020,6 +1139,549 @@ function loadMessages() {
 
 
 // =====================================
+// قائمة إدارة الأدمن
+// =====================================
+
+function showAdminMenu(
+    event,
+    uid,
+    name
+) {
+
+    // =================================
+    // إزالة أي قائمة قديمة
+    // =================================
+
+    const oldMenu =
+        document.getElementById(
+            "adminUserMenu"
+        );
+
+    if (oldMenu) {
+
+        oldMenu.remove();
+
+    }
+
+
+    // =================================
+    // إنشاء القائمة
+    // =================================
+
+    const menu =
+        document.createElement(
+            "div"
+        );
+
+
+    menu.id =
+        "adminUserMenu";
+
+
+    menu.style.position =
+        "fixed";
+
+    menu.style.zIndex =
+        "99999";
+
+    menu.style.background =
+        "#fff";
+
+    menu.style.border =
+        "1px solid #ddd";
+
+    menu.style.borderRadius =
+        "12px";
+
+    menu.style.padding =
+        "8px";
+
+    menu.style.minWidth =
+        "180px";
+
+    menu.style.boxShadow =
+        "0 5px 25px rgba(0,0,0,.20)";
+
+
+    // =================================
+    // اسم المستخدم
+    // =================================
+
+    const title =
+        document.createElement(
+            "div"
+        );
+
+
+    title.textContent =
+        "👤 " + name;
+
+
+    title.style.fontWeight =
+        "bold";
+
+    title.style.padding =
+        "8px";
+
+    title.style.borderBottom =
+        "1px solid #eee";
+
+    title.style.marginBottom =
+        "5px";
+
+
+    menu.appendChild(
+        title
+    );
+
+
+    // =================================
+    // زر التنبيه
+    // =================================
+
+    const warningBtn =
+        document.createElement(
+            "button"
+        );
+
+
+    warningBtn.type =
+        "button";
+
+
+    warningBtn.textContent =
+        "⚠️ إرسال تنبيه";
+
+
+    warningBtn.style.display =
+        "block";
+
+    warningBtn.style.width =
+        "100%";
+
+    warningBtn.style.background =
+        "#fff3cd";
+
+    warningBtn.style.color =
+        "#664d03";
+
+    warningBtn.style.marginBottom =
+        "5px";
+
+
+    warningBtn.addEventListener(
+        "click",
+        async () => {
+
+            menu.remove();
+
+            await sendAdminWarning(
+                uid,
+                name
+            );
+
+        }
+    );
+
+
+    menu.appendChild(
+        warningBtn
+    );
+
+
+    // =================================
+    // زر الحظر
+    // =================================
+
+    const banBtn =
+        document.createElement(
+            "button"
+        );
+
+
+    banBtn.type =
+        "button";
+
+
+    banBtn.textContent =
+        "🚫 حظر المستخدم";
+
+
+    banBtn.style.display =
+        "block";
+
+    banBtn.style.width =
+        "100%";
+
+    banBtn.style.background =
+        "#b42318";
+
+    banBtn.style.color =
+        "#fff";
+
+
+    banBtn.addEventListener(
+        "click",
+        async () => {
+
+            menu.remove();
+
+            await banUser(
+                uid,
+                name
+            );
+
+        }
+    );
+
+
+    menu.appendChild(
+        banBtn
+    );
+
+
+    // =================================
+    // زر إلغاء
+    // =================================
+
+    const cancelBtn =
+        document.createElement(
+            "button"
+        );
+
+
+    cancelBtn.type =
+        "button";
+
+
+    cancelBtn.textContent =
+        "❌ إلغاء";
+
+
+    cancelBtn.style.display =
+        "block";
+
+    cancelBtn.style.width =
+        "100%";
+
+    cancelBtn.style.background =
+        "#eee";
+
+    cancelBtn.style.color =
+        "#333";
+
+    cancelBtn.style.marginTop =
+        "5px";
+
+
+    cancelBtn.addEventListener(
+        "click",
+        () => {
+
+            menu.remove();
+
+        }
+    );
+
+
+    menu.appendChild(
+        cancelBtn
+    );
+
+
+    document.body.appendChild(
+        menu
+    );
+
+
+    // =================================
+    // مكان القائمة
+    // =================================
+
+    let left =
+        event.clientX;
+
+    let top =
+        event.clientY;
+
+
+    const menuWidth =
+        180;
+
+    const menuHeight =
+        150;
+
+
+    if (
+        left + menuWidth >
+        window.innerWidth
+    ) {
+
+        left =
+            window.innerWidth -
+            menuWidth -
+            10;
+
+    }
+
+
+    if (
+        top + menuHeight >
+        window.innerHeight
+    ) {
+
+        top =
+            window.innerHeight -
+            menuHeight -
+            10;
+
+    }
+
+
+    menu.style.left =
+        Math.max(
+            10,
+            left
+        ) + "px";
+
+
+    menu.style.top =
+        Math.max(
+            10,
+            top
+        ) + "px";
+
+
+    // =================================
+    // إغلاق القائمة بالضغط خارجها
+    // =================================
+
+    setTimeout(
+        () => {
+
+            document.addEventListener(
+                "click",
+                function closeMenu(e) {
+
+                    if (
+                        menu &&
+                        !menu.contains(e.target)
+                    ) {
+
+                        menu.remove();
+
+                        document.removeEventListener(
+                            "click",
+                            closeMenu
+                        );
+
+                    }
+
+                }
+            );
+
+        },
+        0
+    );
+
+}
+
+
+// =====================================
+// إرسال تنبيه للمستخدم
+// =====================================
+
+async function sendAdminWarning(
+    uid,
+    name
+) {
+
+    try {
+
+        await addDoc(
+            collection(
+                db,
+                "notifications",
+                uid,
+                "items"
+            ),
+            {
+
+                type:
+                    "admin_warning",
+
+                title:
+                    "⚠️ تنبيه من الإدارة",
+
+                message:
+                    "تم إرسال تنبيه لك من إدارة Cafe Arab.",
+
+                fromAdmin:
+                    true,
+
+                read:
+                    false,
+
+                createdAt:
+                    serverTimestamp()
+
+            }
+        );
+
+
+        alert(
+            "⚠️ تم إرسال تنبيه إلى " +
+            name
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Admin Warning Error:",
+            error
+        );
+
+
+        alert(
+            "❌ تعذر إرسال التنبيه.\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+// =====================================
+// حظر المستخدم
+// =====================================
+
+async function banUser(
+    uid,
+    name
+) {
+
+    const confirmed =
+        confirm(
+            "🚫 هل أنت متأكد من حظر:\n\n" +
+            name +
+            "\n\nلن يستطيع استخدام الموقع بعد الحظر."
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    try {
+
+        // =================================
+        // تسجيل الحظر
+        // =================================
+
+        await setDoc(
+            doc(
+                db,
+                "users",
+                uid
+            ),
+            {
+
+                banned:
+                    true,
+
+                bannedAt:
+                    serverTimestamp(),
+
+                bannedBy:
+                    currentUser.uid,
+
+                isGuest:
+                    false
+
+            },
+            {
+                merge: true
+            }
+        );
+
+
+        // =================================
+        // إشعار المستخدم
+        // =================================
+
+        try {
+
+            await addDoc(
+                collection(
+                    db,
+                    "notifications",
+                    uid,
+                    "items"
+                ),
+                {
+
+                    type:
+                        "admin_ban",
+
+                    title:
+                        "🚫 تم حظرك",
+
+                    message:
+                        "تم حظر حسابك من إدارة Cafe Arab.",
+
+                    fromAdmin:
+                        true,
+
+                    read:
+                        false,
+
+                    createdAt:
+                        serverTimestamp()
+
+                }
+            );
+
+        } catch (notificationError) {
+
+            console.error(
+                "Ban Notification Error:",
+                notificationError
+            );
+
+        }
+
+
+        alert(
+            "🚫 تم حظر " +
+            name +
+            " بنجاح."
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Ban User Error:",
+            error
+        );
+
+
+        alert(
+            "❌ تعذر حظر المستخدم.\n\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+// =====================================
 // فتح المحادثة الخاصة
 // =====================================
 
@@ -1027,20 +1689,11 @@ window.openPrivateChat =
     function(uid, name) {
 
         if (!currentUser) {
+
             return;
+
         }
 
-
-        // =================================
-        // الضيف مسموح له بالخاص
-        // =================================
-
-        // لا يوجد أي شرط يمنع الضيف هنا
-
-
-        // ================================
-        // منع فتح محادثة مع النفس
-        // ================================
 
         if (
             uid ===
@@ -1048,6 +1701,7 @@ window.openPrivateChat =
         ) {
 
             return;
+
         }
 
 
@@ -1072,10 +1726,6 @@ if (usersBtn) {
         "click",
         () => {
 
-            // ==========================
-            // العضو والضيف مسموح لهم
-            // ==========================
-
             window.location.href =
                 "users.html";
 
@@ -1092,7 +1742,9 @@ if (usersBtn) {
 function scrollBottom() {
 
     if (!messages) {
+
         return;
+
     }
 
 
@@ -1125,5 +1777,5 @@ window.addEventListener(
 // =====================================
 
 console.log(
-    "✅ Cafe Arab Chat - Guest + Registered Users"
+    "✅ Cafe Arab Chat - Admin Warning + Ban Ready"
 );
