@@ -239,39 +239,134 @@ onAuthStateChanged(
 
         if (isGuest) {
 
-            const guestData =
-                getGuestData();
+    const guestData =
+        getGuestData();
 
-            if (!guestData) {
+    if (!guestData) {
 
-                try {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error(error);
+        }
 
-                    await signOut(
-                        auth
-                    );
+        window.location.href =
+            "login.html";
 
-                } catch (error) {
+        return;
+    }
 
-                    console.error(error);
 
-                }
+    currentUserName =
+        guestData.name ||
+        "ضيف";
 
-                window.location.href =
-                    "login.html";
+    currentUserCountry =
+        guestData.country ||
+        "";
 
-                return;
 
+    // =================================
+    // فحص حظر الضيف
+    // =================================
+
+    try {
+
+        const guestDoc =
+            await getDoc(
+                doc(
+                    db,
+                    "users",
+                    user.uid
+                )
+            );
+
+        if (
+            guestDoc.exists() &&
+            guestDoc.data().banned === true
+        ) {
+
+            alert(
+                "🚫 تم حظرك من الموقع.\n\n" +
+                "لا يمكنك استخدام Cafe Arab حاليًا."
+            );
+
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error(
+                    "Guest Ban Logout Error:",
+                    error
+                );
             }
 
+            sessionStorage.removeItem(
+                "cafeArabGuest"
+            );
 
-            currentUserName =
-                guestData.name ||
-                "ضيف";
+            window.location.href =
+                "login.html";
 
-            currentUserCountry =
-                guestData.country ||
-                "";
+            return;
+        }
 
+    } catch (error) {
+
+        console.error(
+            "Guest Ban Check Error:",
+            error
+        );
+
+    }
+
+
+    // =================================
+    // تسجيل / تحديث الضيف
+    // =================================
+
+    try {
+
+        await setDoc(
+            doc(
+                db,
+                "users",
+                user.uid
+            ),
+            {
+
+                name:
+                    guestData.name ||
+                    "ضيف",
+
+                country:
+                    guestData.country ||
+                    "",
+
+                isGuest:
+                    true,
+
+                online:
+                    true,
+
+                lastSeen:
+                    serverTimestamp()
+
+            },
+            {
+                merge: true
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Guest Profile Save Error:",
+            error
+        );
+
+    }
+
+        }
 
             // =================================
             // تسجيل الضيف في لوحة الإدارة
