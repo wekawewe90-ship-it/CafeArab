@@ -252,6 +252,20 @@ onAuthStateChanged(
 
             const userData =
                 userDoc.data();
+            if (userData.banned === true) {
+
+    alert(
+        "🚫 حسابك محظور.\n\n" +
+        "لا يمكنك استخدام الموقع حاليًا."
+    );
+
+    await signOut(auth);
+
+    window.location.href =
+        "login.html";
+
+    return;
+        }
 
             currentUserName =
                 userData.name ||
