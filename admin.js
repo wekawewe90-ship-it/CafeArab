@@ -61,6 +61,31 @@ const loading =
     document.getElementById("loading");
 
 // =====================================
+// عناصر تفاصيل المستخدم
+// =====================================
+
+const userDetailsPanel =
+    document.getElementById("userDetailsPanel");
+
+const detailName =
+    document.getElementById("detailName");
+
+const detailUsername =
+    document.getElementById("detailUsername");
+
+const detailCountry =
+    document.getElementById("detailCountry");
+
+const detailStatus =
+    document.getElementById("detailStatus");
+
+const detailUid =
+    document.getElementById("detailUid");
+
+const closeDetailsBtn =
+    document.getElementById("closeDetailsBtn");
+
+// =====================================
 // متغيرات
 // =====================================
 
@@ -118,7 +143,7 @@ function isAdmin(user) {
 }
 
 // =====================================
-// تسجيل الدخول والتحقق
+// تسجيل الدخول
 // =====================================
 
 onAuthStateChanged(
@@ -133,10 +158,6 @@ onAuthStateChanged(
             return;
 
         }
-
-        // =================================
-        // التحقق من صلاحية المدير
-        // =================================
 
         if (!isAdmin(user)) {
 
@@ -158,10 +179,6 @@ onAuthStateChanged(
             return;
 
         }
-
-        // =================================
-        // المدير مسموح له
-        // =================================
 
         if (adminMessage) {
 
@@ -252,20 +269,12 @@ async function loadUsers() {
             }
         );
 
-        // =============================
-        // عدد المستخدمين
-        // =============================
-
         if (usersCount) {
 
             usersCount.textContent =
                 allUsers.length;
 
         }
-
-        // =============================
-        // عدد المتصلين
-        // =============================
 
         if (onlineCount) {
 
@@ -387,43 +396,149 @@ function renderUsers() {
             const isOnline =
                 user.online === true;
 
-            tr.innerHTML = `
+            // =================================
+            // الخلايا
+            // =================================
 
-                <td>
-                    ${escapeHtml(name)}
-                </td>
+            const nameTd =
+                document.createElement(
+                    "td"
+                );
 
-                <td>
-                    ${escapeHtml(username)}
-                </td>
+            nameTd.textContent =
+                name;
 
-                <td>
-                    ${escapeHtml(country)}
-                </td>
+            const usernameTd =
+                document.createElement(
+                    "td"
+                );
 
-                <td class="${
-                    isOnline
-                        ? "online"
-                        : "offline"
-                }">
+            usernameTd.textContent =
+                username;
 
-                    ${
-                        isOnline
-                            ? "🟢 متصل"
-                            : "⚪ غير متصل"
-                    }
+            const countryTd =
+                document.createElement(
+                    "td"
+                );
 
-                </td>
+            countryTd.textContent =
+                country;
 
-                <td>
+            const statusTd =
+                document.createElement(
+                    "td"
+                );
 
-                    <div class="uid">
-                        ${escapeHtml(user.id)}
-                    </div>
+            statusTd.className =
+                isOnline
+                    ? "online"
+                    : "offline";
 
-                </td>
+            statusTd.textContent =
+                isOnline
+                    ? "🟢 متصل"
+                    : "⚪ غير متصل";
 
-            `;
+            const uidTd =
+                document.createElement(
+                    "td"
+                );
+
+            const uidDiv =
+                document.createElement(
+                    "div"
+                );
+
+            uidDiv.className =
+                "uid";
+
+            uidDiv.textContent =
+                user.id;
+
+            uidTd.appendChild(
+                uidDiv
+            );
+
+            // =================================
+            // زر التفاصيل
+            // =================================
+
+            const actionTd =
+                document.createElement(
+                    "td"
+                );
+
+            const detailsBtn =
+                document.createElement(
+                    "button"
+                );
+
+            detailsBtn.type =
+                "button";
+
+            detailsBtn.textContent =
+                "👁️ تفاصيل";
+
+            detailsBtn.style.background =
+                "#222";
+
+            detailsBtn.style.color =
+                "#fff";
+
+            detailsBtn.style.padding =
+                "8px 12px";
+
+            detailsBtn.style.borderRadius =
+                "8px";
+
+            detailsBtn.style.border =
+                "0";
+
+            detailsBtn.style.cursor =
+                "pointer";
+
+            detailsBtn.addEventListener(
+                "click",
+                () => {
+
+                    showUserDetails(
+                        user
+                    );
+
+                }
+            );
+
+            actionTd.appendChild(
+                detailsBtn
+            );
+
+            // =================================
+            // إضافة الخلايا للصف
+            // =================================
+
+            tr.appendChild(
+                nameTd
+            );
+
+            tr.appendChild(
+                usernameTd
+            );
+
+            tr.appendChild(
+                countryTd
+            );
+
+            tr.appendChild(
+                statusTd
+            );
+
+            tr.appendChild(
+                uidTd
+            );
+
+            tr.appendChild(
+                actionTd
+            );
 
             usersTable.appendChild(
                 tr
@@ -435,7 +550,97 @@ function renderUsers() {
 }
 
 // =====================================
-// البحث عن المستخدمين
+// عرض تفاصيل المستخدم
+// =====================================
+
+function showUserDetails(user) {
+
+    if (!userDetailsPanel) {
+
+        alert(
+            "قسم تفاصيل المستخدم غير موجود في الصفحة."
+        );
+
+        return;
+
+    }
+
+    if (detailName) {
+
+        detailName.textContent =
+            user.name ||
+            user.displayName ||
+            "مستخدم";
+
+    }
+
+    if (detailUsername) {
+
+        detailUsername.textContent =
+            user.username ||
+            "—";
+
+    }
+
+    if (detailCountry) {
+
+        detailCountry.textContent =
+            user.country ||
+            "—";
+
+    }
+
+    if (detailStatus) {
+
+        detailStatus.textContent =
+            user.online === true
+                ? "🟢 متصل الآن"
+                : "⚪ غير متصل";
+
+    }
+
+    if (detailUid) {
+
+        detailUid.textContent =
+            user.id ||
+            "—";
+
+    }
+
+    userDetailsPanel.style.display =
+        "block";
+
+    userDetailsPanel.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+}
+
+// =====================================
+// إغلاق تفاصيل المستخدم
+// =====================================
+
+if (closeDetailsBtn) {
+
+    closeDetailsBtn.addEventListener(
+        "click",
+        () => {
+
+            if (userDetailsPanel) {
+
+                userDetailsPanel.style.display =
+                    "none";
+
+            }
+
+        }
+    );
+
+}
+
+// =====================================
+// البحث
 // =====================================
 
 if (userSearch) {
@@ -561,7 +766,7 @@ async function loadNotificationsCount() {
 }
 
 // =====================================
-// زر تحديث البيانات
+// تحديث
 // =====================================
 
 if (refreshBtn) {
@@ -631,41 +836,6 @@ if (logoutBtn) {
 
         }
     );
-
-}
-
-// =====================================
-// حماية النصوص من HTML
-// =====================================
-
-function escapeHtml(value) {
-
-    return String(value)
-
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
 
 }
 
