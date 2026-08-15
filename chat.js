@@ -660,10 +660,10 @@ function showNotification(data) {
 
 
     const message =
-        data.message ||
-        "لديك إشعار جديد من إدارة Cafe Arab.";
-
-
+    data.message ||
+    data.text ||
+    "لديك إشعار جديد من إدارة Cafe Arab.";
+    
     // =================================
     // لو حظر
     // =================================
