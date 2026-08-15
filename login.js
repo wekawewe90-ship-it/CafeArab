@@ -2,6 +2,7 @@
 // Cafe Arab - Login
 // Email Verification
 // Password Reset
+// Account Ban Check
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -15,6 +16,7 @@ import {
 
 import {
     doc,
+    getDoc,
     updateDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
@@ -88,6 +90,40 @@ form.addEventListener(
 
 
             // =================================
+            // فحص حظر الحساب
+            // =================================
+
+            const userRef =
+                doc(
+                    db,
+                    "users",
+                    user.uid
+                );
+
+            const userSnap =
+                await getDoc(
+                    userRef
+                );
+
+
+            if (
+                userSnap.exists() &&
+                userSnap.data().banned === true
+            ) {
+
+                alert(
+                    "🚫 حسابك محظور.\n\n" +
+                    "لا يمكنك الدخول إلى الموقع حاليًا."
+                );
+
+                await signOut(auth);
+
+                return;
+
+            }
+
+
+            // =================================
             // التأكد من تأكيد الإيميل
             // =================================
 
@@ -149,11 +185,7 @@ form.addEventListener(
             // =================================
 
             await updateDoc(
-                doc(
-                    db,
-                    "users",
-                    user.uid
-                ),
+                userRef,
                 {
 
                     online: true,
