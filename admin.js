@@ -7,7 +7,9 @@ import { auth, db } from "./firebase.js";
 
 import {
     collection,
-    getDocs
+    getDocs,
+    doc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -397,7 +399,7 @@ function renderUsers() {
                 user.online === true;
 
             // =================================
-            // الخلايا
+            // الاسم
             // =================================
 
             const nameTd =
@@ -408,6 +410,10 @@ function renderUsers() {
             nameTd.textContent =
                 name;
 
+            // =================================
+            // Username
+            // =================================
+
             const usernameTd =
                 document.createElement(
                     "td"
@@ -416,6 +422,10 @@ function renderUsers() {
             usernameTd.textContent =
                 username;
 
+            // =================================
+            // الدولة
+            // =================================
+
             const countryTd =
                 document.createElement(
                     "td"
@@ -423,6 +433,10 @@ function renderUsers() {
 
             countryTd.textContent =
                 country;
+
+            // =================================
+            // الحالة
+            // =================================
 
             const statusTd =
                 document.createElement(
@@ -438,6 +452,10 @@ function renderUsers() {
                 isOnline
                     ? "🟢 متصل"
                     : "⚪ غير متصل";
+
+            // =================================
+            // UID
+            // =================================
 
             const uidTd =
                 document.createElement(
@@ -460,13 +478,17 @@ function renderUsers() {
             );
 
             // =================================
-            // زر التفاصيل
+            // الإجراءات
             // =================================
 
             const actionTd =
                 document.createElement(
                     "td"
                 );
+
+            // =================================
+            // زر التفاصيل
+            // =================================
 
             const detailsBtn =
                 document.createElement(
@@ -487,6 +509,9 @@ function renderUsers() {
 
             detailsBtn.style.padding =
                 "8px 12px";
+
+            detailsBtn.style.margin =
+                "3px";
 
             detailsBtn.style.borderRadius =
                 "8px";
@@ -513,7 +538,73 @@ function renderUsers() {
             );
 
             // =================================
-            // إضافة الخلايا للصف
+            // زر الحظر / إلغاء الحظر
+            // =================================
+
+            const banBtn =
+                document.createElement(
+                    "button"
+                );
+
+            banBtn.type =
+                "button";
+
+            banBtn.style.padding =
+                "8px 12px";
+
+            banBtn.style.margin =
+                "3px";
+
+            banBtn.style.borderRadius =
+                "8px";
+
+            banBtn.style.border =
+                "0";
+
+            banBtn.style.cursor =
+                "pointer";
+
+            if (user.banned === true) {
+
+                banBtn.textContent =
+                    "✅ إلغاء الحظر";
+
+                banBtn.style.background =
+                    "#198754";
+
+                banBtn.style.color =
+                    "#fff";
+
+            } else {
+
+                banBtn.textContent =
+                    "🚫 حظر";
+
+                banBtn.style.background =
+                    "#dc3545";
+
+                banBtn.style.color =
+                    "#fff";
+
+            }
+
+            banBtn.addEventListener(
+                "click",
+                async () => {
+
+                    await toggleBanUser(
+                        user
+                    );
+
+                }
+            );
+
+            actionTd.appendChild(
+                banBtn
+            );
+
+            // =================================
+            // إضافة الصف
             // =================================
 
             tr.appendChild(
@@ -546,6 +637,106 @@ function renderUsers() {
 
         }
     );
+
+}
+
+// =====================================
+// حظر / إلغاء حظر المستخدم
+// =====================================
+
+async function toggleBanUser(user) {
+
+    if (!user || !user.id) {
+        return;
+    }
+
+    // منع المدير من حظر نفسه
+    if (
+        auth.currentUser &&
+        user.id === auth.currentUser.uid
+    ) {
+
+        alert(
+            "لا يمكنك حظر حساب المدير الحالي."
+        );
+
+        return;
+
+    }
+
+    const currentlyBanned =
+        user.banned === true;
+
+    const actionText =
+        currentlyBanned
+            ? "إلغاء حظر"
+            : "حظر";
+
+    const confirmed =
+        confirm(
+            currentlyBanned
+                ? "هل تريد إلغاء حظر هذا المستخدم؟"
+                : "هل تريد حظر هذا المستخدم؟"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const userRef =
+            doc(
+                db,
+                "users",
+                user.id
+            );
+
+        await updateDoc(
+            userRef,
+            {
+                banned:
+                    !currentlyBanned
+            }
+        );
+
+        // تحديث البيانات محليًا
+        const userIndex =
+            allUsers.findIndex(
+                item =>
+                    item.id === user.id
+            );
+
+        if (userIndex !== -1) {
+
+            allUsers[userIndex].banned =
+                !currentlyBanned;
+
+        }
+
+        renderUsers();
+
+        alert(
+            currentlyBanned
+                ? "تم إلغاء حظر المستخدم ✅"
+                : "تم حظر المستخدم 🚫"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Toggle Ban Error:",
+            error
+        );
+
+        alert(
+            "حدث خطأ أثناء " +
+            actionText +
+            " المستخدم:\n" +
+            error.message
+        );
+
+    }
 
 }
 
@@ -593,9 +784,11 @@ function showUserDetails(user) {
     if (detailStatus) {
 
         detailStatus.textContent =
-            user.online === true
-                ? "🟢 متصل الآن"
-                : "⚪ غير متصل";
+            user.banned === true
+                ? "🚫 محظور"
+                : user.online === true
+                    ? "🟢 متصل الآن"
+                    : "⚪ غير متصل";
 
     }
 
@@ -845,4 +1038,4 @@ if (logoutBtn) {
 
 console.log(
     "✅ admin.js Loaded Successfully"
-);
+); 
