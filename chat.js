@@ -16,7 +16,8 @@ import {
     serverTimestamp,
     doc,
     getDoc,
-    setDoc
+    setDoc, 
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import {
@@ -69,6 +70,9 @@ const userName =
 const usersBtn =
     document.getElementById("usersBtn");
 
+const clearChatBtn =
+    document.getElementById("clearChatBtn");
+
 
 // =====================================
 // متغيرات المستخدم
@@ -102,6 +106,21 @@ function isAdmin() {
     );
 }
 
+// =====================================
+// إظهار زر مسح الشات للأدمن فقط
+// =====================================
+
+function updateAdminControls() {
+
+    if (!clearChatBtn) {
+        return;
+    }
+
+    clearChatBtn.style.display =
+        isAdmin()
+            ? "inline-flex"
+            : "none";
+}
 
 // =====================================
 // بيانات الضيف
@@ -150,7 +169,8 @@ function getGuestData() {
 // =====================================
 
 function updateUserName() {
-
+updateAdminControls();
+    
     if (!userName) {
         return;
     }
@@ -2061,6 +2081,118 @@ window.addEventListener(
     }
 );
 
+// =====================================
+// مسح الشات العام - للأدمن فقط
+// =====================================
+
+if (clearChatBtn) {
+
+    clearChatBtn.addEventListener(
+        "click",
+        async () => {
+
+            // =============================
+            // حماية إضافية
+            // =============================
+
+            if (!isAdmin()) {
+
+                alert(
+                    "❌ ليس لديك صلاحية لمسح الشات."
+                );
+
+                return;
+            }
+
+
+            // =============================
+            // تأكيد
+            // =============================
+
+            const confirmed =
+                confirm(
+                    "🗑️ هل أنت متأكد؟\n\n" +
+                    "سيتم حذف جميع رسائل الشات العام نهائيًا."
+                );
+
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            try {
+
+                clearChatBtn.disabled =
+                    true;
+
+
+                clearChatBtn.textContent =
+                    "⏳";
+
+
+                // =============================
+                // جلب جميع الرسائل
+                // =============================
+
+                const snapshot =
+                    await getDocs(
+                        collection(
+                            db,
+                            "messages"
+                        )
+                    );
+
+
+                // =============================
+                // حذف الرسائل واحدة واحدة
+                // =============================
+
+                for (
+                    const messageDoc
+                    of snapshot.docs
+                ) {
+
+                    await deleteDoc(
+                        messageDoc.ref
+                    );
+
+                }
+
+
+                alert(
+                    "✅ تم مسح الشات العام بنجاح."
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Clear Chat Error:",
+                    error
+                );
+
+
+                alert(
+                    "❌ تعذر مسح الشات.\n\n" +
+                    error.message
+                );
+
+
+            } finally {
+
+                clearChatBtn.disabled =
+                    false;
+
+                clearChatBtn.textContent =
+                    "🗑️";
+
+            }
+
+        }
+    );
+
+            }
 
 // =====================================
 // نهاية الملف
