@@ -645,7 +645,67 @@ function showNotification(
         data.text ||
         data.body ||
         "لديك إشعار جديد من إدارة Cafe Arab.";
+// =================================
+// حظر
+// =================================
 
+if (data.type === "admin_ban") {
+
+    const banTitle =
+        data.title ||
+        "🚫 تم حظرك";
+
+    const banMessage =
+        data.message ||
+        data.text ||
+        data.body ||
+        "تم حظرك من إدارة الموقع.";
+
+    alert(
+        banTitle +
+        "\n\n" +
+        banMessage
+    );
+
+    setTimeout(
+        async () => {
+
+            await logoutUser(
+                isGuest
+            );
+
+        },
+        500
+    );
+
+    return;
+}
+
+
+// =================================
+// تنبيه
+// =================================
+
+if (data.type === "admin_warning") {
+
+    const warningTitle =
+        data.title ||
+        "⚠️ تنبيه من الإدارة";
+
+    const warningMessage =
+        data.message ||
+        data.text ||
+        data.body ||
+        "تم إرسال تنبيه لك من إدارة الموقع.";
+
+    alert(
+        warningTitle +
+        "\n\n" +
+        warningMessage
+    );
+
+    return;
+}
 
     // =================================
     // حظر
