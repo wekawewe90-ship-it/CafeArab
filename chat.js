@@ -2,6 +2,7 @@
 // Cafe Arab Chat V3
 // Registered Users + Guest Users
 // Admin Warning + Ban
+// Notifications Receiver
 // =====================================
 
 import { auth, db } from "./firebase.js";
@@ -82,6 +83,8 @@ let currentUserCountry = "";
 let isGuest = false;
 
 let messagesUnsubscribe = null;
+
+let notificationsUnsubscribe = null;
 
 
 // =====================================
@@ -178,10 +181,6 @@ onAuthStateChanged(
             const guestData =
                 getGuestData();
 
-            // =============================
-            // يوجد بيانات ضيف
-            // =============================
-
             if (guestData) {
 
                 try {
@@ -209,10 +208,6 @@ onAuthStateChanged(
 
             }
 
-
-            // =============================
-            // لا ضيف ولا عضو
-            // =============================
 
             window.location.href =
                 "login.html";
@@ -251,7 +246,9 @@ onAuthStateChanged(
 
                 try {
 
-                    await signOut(auth);
+                    await signOut(
+                        auth
+                    );
 
                 } catch (error) {
 
@@ -424,6 +421,13 @@ onAuthStateChanged(
 
         startChat();
 
+
+        // =================================
+        // تشغيل استقبال الإشعارات
+        // =================================
+
+        startNotifications();
+
     }
 );
 
@@ -435,6 +439,212 @@ onAuthStateChanged(
 function startChat() {
 
     loadMessages();
+
+}
+
+
+// =====================================
+// استقبال إشعارات الإدارة
+// =====================================
+
+function startNotifications() {
+
+    if (!currentUser) {
+        return;
+    }
+
+
+    // =================================
+    // إلغاء Listener قديم
+    // =================================
+
+    if (notificationsUnsubscribe) {
+
+        notificationsUnsubscribe();
+
+        notificationsUnsubscribe =
+            null;
+
+    }
+
+
+    const notificationsRef =
+        collection(
+            db,
+            "notifications",
+            currentUser.uid,
+            "items"
+        );
+
+
+    const notificationsQuery =
+        query(
+            notificationsRef,
+            orderBy(
+                "createdAt",
+                "desc"
+            )
+        );
+
+
+    notificationsUnsubscribe =
+        onSnapshot(
+            notificationsQuery,
+            (snapshot) => {
+
+                snapshot.docChanges()
+                    .forEach(
+                        (change) => {
+
+                            // =========================
+                            // نهتم بالإشعار الجديد فقط
+                            // =========================
+
+                            if (
+                                change.type !==
+                                "added"
+                            ) {
+
+                                return;
+
+                            }
+
+
+                            const data =
+                                change.doc.data();
+
+
+                            // =========================
+                            // لا نكرر إشعار مقروء
+                            // =========================
+
+                            if (
+                                data.read === true
+                            ) {
+
+                                return;
+
+                            }
+
+
+                            // =========================
+                            // عرض الإشعار
+                            // =========================
+
+                            showNotification(
+                                data
+                            );
+
+                        }
+                    );
+
+            },
+
+            (error) => {
+
+                console.error(
+                    "Notifications Listener Error:",
+                    error
+                );
+
+            }
+        );
+
+}
+
+
+// =====================================
+// عرض الإشعار للمستخدم
+// =====================================
+
+function showNotification(data) {
+
+    const title =
+        data.title ||
+        "🔔 إشعار جديد";
+
+
+    const message =
+        data.message ||
+        "لديك إشعار جديد من إدارة Cafe Arab.";
+
+
+    // =================================
+    // لو حظر
+    // =================================
+
+    if (
+        data.type ===
+        "admin_ban"
+    ) {
+
+        alert(
+            "🚫 " +
+            title +
+            "\n\n" +
+            message
+        );
+
+
+        // =================================
+        // تسجيل الخروج بعد الحظر
+        // =================================
+
+        if (
+            currentUser &&
+            data.type === "admin_ban"
+        ) {
+
+            setTimeout(
+                async () => {
+
+                    try {
+
+                        await signOut(
+                            auth
+                        );
+
+                        if (isGuest) {
+
+                            sessionStorage.removeItem(
+                                "cafeArabGuest"
+                            );
+
+                        }
+
+                        window.location.href =
+                            "login.html";
+
+                    } catch (error) {
+
+                        console.error(
+                            "Ban Logout Error:",
+                            error
+                        );
+
+                    }
+
+                },
+                1000
+            );
+
+        }
+
+        return;
+
+    }
+
+
+    // =================================
+    // تنبيه عادي من الإدارة
+    // =================================
+
+    alert(
+        "⚠️ " +
+        title +
+        "\n\n" +
+        message
+    );
 
 }
 
@@ -961,10 +1171,6 @@ function loadMessages() {
                                 "underline";
 
 
-                            // =================================
-                            // لو أدمن
-                            // =================================
-
                             if (isAdmin()) {
 
                                 sender.title =
@@ -990,10 +1196,6 @@ function loadMessages() {
 
 
                             } else {
-
-                                // =================================
-                                // مستخدم عادي
-                                // =================================
 
                                 sender.title =
                                     "فتح محادثة خاصة";
@@ -1148,10 +1350,6 @@ function showAdminMenu(
     name
 ) {
 
-    // =================================
-    // إزالة أي قائمة قديمة
-    // =================================
-
     const oldMenu =
         document.getElementById(
             "adminUserMenu"
@@ -1163,10 +1361,6 @@ function showAdminMenu(
 
     }
 
-
-    // =================================
-    // إنشاء القائمة
-    // =================================
 
     const menu =
         document.createElement(
@@ -1202,10 +1396,6 @@ function showAdminMenu(
     menu.style.boxShadow =
         "0 5px 25px rgba(0,0,0,.20)";
 
-
-    // =================================
-    // اسم المستخدم
-    // =================================
 
     const title =
         document.createElement(
@@ -1341,7 +1531,7 @@ function showAdminMenu(
 
 
     // =================================
-    // زر إلغاء
+    // إلغاء
     // =================================
 
     const cancelBtn =
@@ -1393,10 +1583,6 @@ function showAdminMenu(
         menu
     );
 
-
-    // =================================
-    // مكان القائمة
-    // =================================
 
     let left =
         event.clientX;
@@ -1451,10 +1637,6 @@ function showAdminMenu(
             top
         ) + "px";
 
-
-    // =================================
-    // إغلاق القائمة بالضغط خارجها
-    // =================================
 
     setTimeout(
         () => {
@@ -1611,7 +1793,7 @@ async function banUser(
 
 
         // =================================
-        // إشعار المستخدم
+        // إرسال إشعار الحظر
         // =================================
 
         try {
@@ -1755,7 +1937,7 @@ function scrollBottom() {
 
 
 // =====================================
-// تنظيف Listener
+// تنظيف Listeners
 // =====================================
 
 window.addEventListener(
@@ -1768,6 +1950,13 @@ window.addEventListener(
 
         }
 
+
+        if (notificationsUnsubscribe) {
+
+            notificationsUnsubscribe();
+
+        }
+
     }
 );
 
@@ -1777,5 +1966,5 @@ window.addEventListener(
 // =====================================
 
 console.log(
-    "✅ Cafe Arab Chat - Admin Warning + Ban Ready"
-);
+    "✅ Cafe Arab Chat - Notifications Receiver Ready"
+); 
