@@ -179,6 +179,88 @@ updateAdminControls();
         "👤 " + currentUserName;
 }
 
+// =====================================
+// رسالة ترحيب تلقائية عند دخول الشات
+// =====================================
+
+async function sendWelcomeMessage() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    if (!currentUserName) {
+        return;
+    }
+
+    // منع إرسال الترحيب أكثر من مرة في نفس الجلسة
+    const welcomeKey =
+        "cafeArabWelcome_" + currentUser.uid;
+
+    if (
+        sessionStorage.getItem(welcomeKey)
+    ) {
+        return;
+    }
+
+    try {
+
+        await addDoc(
+            collection(
+                db,
+                "messages"
+            ),
+            {
+
+                uid:
+                    currentUser.uid,
+
+                user:
+                    "Cafe Arab ☕",
+
+                country:
+                    currentUserCountry,
+
+                isGuest:
+                    false,
+
+                type:
+                    "text",
+
+                text:
+                    "منور الدنيا يا " +
+                    currentUserName +
+                    " 👋❤️",
+
+                createdAt:
+                    serverTimestamp(),
+
+                welcome:
+                    true
+
+            }
+        );
+
+        // تسجيل أن رسالة الترحيب اتبعت
+        sessionStorage.setItem(
+            welcomeKey,
+            "true"
+        );
+
+        console.log(
+            "✅ Welcome Message Sent"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Welcome Message Error:",
+            error
+        );
+
+    }
+
+}
 
 // =====================================
 // إخراج المستخدم
@@ -517,7 +599,11 @@ onAuthStateChanged(
         // =================================
 
         updateUserName();
+// =================================
+// رسالة الترحيب
+// =================================
 
+await sendWelcomeMessage()
 
         // =================================
         // تشغيل الشات
