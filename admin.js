@@ -537,6 +537,69 @@ function renderUsers() {
                 detailsBtn
             );
 
+ // =================================
+// زر المحادثة الخاصة
+// =================================
+
+const privateChatBtn =
+    document.createElement(
+        "button"
+    );
+
+privateChatBtn.type =
+    "button";
+
+privateChatBtn.textContent =
+    "💬 محادثة خاصة";
+
+privateChatBtn.style.display =
+    "block";
+
+privateChatBtn.style.width =
+    "100%";
+
+privateChatBtn.style.background =
+    "#0d6efd";
+
+privateChatBtn.style.color =
+    "#fff";
+
+privateChatBtn.style.border =
+    "0";
+
+privateChatBtn.style.borderRadius =
+    "8px";
+
+privateChatBtn.style.padding =
+    "10px";
+
+privateChatBtn.style.marginBottom =
+    "5px";
+
+privateChatBtn.style.cursor =
+    "pointer";
+
+privateChatBtn.addEventListener(
+    "click",
+    () => {
+
+        menu.remove();
+
+        window.location.href =
+            "private-chat.html?uid=" +
+            encodeURIComponent(uid) +
+            "&name=" +
+            encodeURIComponent(
+                name || "مستخدم"
+            );
+
+    }
+);
+
+menu.appendChild(
+    privateChatBtn
+);
+            
             // =================================
             // زر الحظر / إلغاء الحظر
             // =================================
